@@ -96,9 +96,9 @@ func _swim(delta: float) -> void:
 			for pellet in food_container.get_children():
 				if not is_instance_valid(pellet):
 					continue
-				var dist := global_position.distance_to(pellet.global_position)
-				if dist < nearest_dist:
-					nearest_dist = dist
+				var pellet_dist := global_position.distance_to(pellet.global_position)
+				if pellet_dist < nearest_dist:
+					nearest_dist = pellet_dist
 					nearest = pellet
 			if nearest:
 				target_food = nearest

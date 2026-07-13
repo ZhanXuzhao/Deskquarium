@@ -47,7 +47,6 @@ var _fish_count_label: Label
 func _ready() -> void:
 	Global.fish_added.connect(_on_fish_added)
 	Global.fish_sold.connect(_on_fish_sold)
-	Global.shop_panel_toggled.connect(_on_shop_toggled)
 	Global.fish_info_requested.connect(_on_fish_info_requested)
 	Global.game_loaded.connect(_on_game_loaded)
 
@@ -243,7 +242,7 @@ func _update_ui_positions() -> void:
 			var start_y := (view_size.y - total_height) / 2
 			for i in btn_count:
 				if buttons[i].action == action:
-					child.position = Vector2(view_size.x - 85 + (85 - btn_width) / 2, start_y + i * (btn_height + spacing))
+					child.position = Vector2(view_size.x - 85 + (85 - btn_width) / 2.0, start_y + i * (btn_height + spacing))
 					break
 
 	# Shop panel
@@ -431,7 +430,7 @@ func _build_side_menu(ui: CanvasLayer, view_size: Vector2) -> void:
 
 	for i in btn_count:
 		var data: Dictionary = buttons[i]
-		var btn_x := view_size.x - 85 + (85 - btn_width) / 2
+		var btn_x := view_size.x - 85 + (85 - btn_width) / 2.0
 		var btn_y := start_y + i * (btn_height + spacing)
 
 		var btn := Button.new()
@@ -696,14 +695,9 @@ func do_upgrade() -> void:
 		Global.save_dirty = true
 
 
-func _on_shop_toggled(visible: bool) -> void:
-	if visible:
-		toggle_shop()
-
-
 # ── Fish Info Panel ──────────────────────────────────────────────────────
 
-func _build_fish_info_panel(ui: CanvasLayer, view_size: Vector2) -> void:
+func _build_fish_info_panel(ui: CanvasLayer, _view_size: Vector2) -> void:
 	_fish_info_panel = Panel.new()
 	_fish_info_panel.name = "FishInfoPanel"
 	_fish_info_panel.size = Vector2(280, 180)

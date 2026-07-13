@@ -141,7 +141,7 @@ static func get_max_hunger(species: Species) -> float:
 			return 200.0
 	return 100.0
 
-static func get_hunger_drain_rate(species: Species) -> float:
+static func get_hunger_drain_rate(_species: Species) -> float:
 	return 2.0
 
 static func get_sell_price(fish_species: Species, level: int) -> int:

@@ -32,6 +32,9 @@ var save_dirty: bool = false
 var fish_count: int = 0
 var max_fish: int = 6
 
+# 加载存档时临时存储鱼的数据，由 main.gd 读取后恢复鱼
+var pending_fish_data: Array = []
+
 var feed_mode: bool = false:
 	set(value):
 		feed_mode = value
@@ -45,6 +48,16 @@ var sell_mode: bool = false:
 		if value:
 			feed_mode = false
 		sell_mode_changed.emit(value)
+		_update_sell_cursor()
+
+
+func _update_sell_cursor() -> void:
+	if sell_mode:
+		var tex := load("res://assets/ui/ui_sell.svg") as Texture2D
+		if tex:
+			Input.set_custom_mouse_cursor(tex, Input.CURSOR_POINTING_HAND, Vector2(16, 16))
+	else:
+		Input.set_custom_mouse_cursor(null)
 
 
 func _ready() -> void:

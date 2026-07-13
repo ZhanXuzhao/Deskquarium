@@ -55,7 +55,7 @@ func _ready() -> void:
 	_setup_ui()
 
 	SaveManager.load_game()
-	add_fish_if_empty()
+	_restore_fish_from_save()
 
 
 func _on_window_resized() -> void:
@@ -84,6 +84,21 @@ func _setup_aquarium() -> void:
 func add_fish_if_empty() -> void:
 	if fish_container.get_child_count() == 0:
 		_spawn_fish(FishData.Species.GUPPY)
+
+
+func _restore_fish_from_save() -> void:
+	var fish_data: Array = Global.pending_fish_data
+	Global.pending_fish_data = []
+	if fish_data.is_empty():
+		add_fish_if_empty()
+		return
+	
+	for fd in fish_data:
+		var species: int = fd.get("species", FishData.Species.GUPPY)
+		var fish := _spawn_fish(species)
+		fish.level = fd.get("level", 0.0)
+		fish.hunger = fd.get("hunger", 1.0)
+		fish.position = Vector2(fd.get("x", 0.0), fd.get("y", 0.0))
 
 
 func _spawn_fish(species: int) -> Node2D:
@@ -616,6 +631,15 @@ func _build_fish_info_panel(ui: CanvasLayer, view_size: Vector2) -> void:
 	_fish_info_next_btn.add_theme_font_size_override("font_size", 12)
 	_fish_info_next_btn.pressed.connect(_on_fish_info_next)
 	top_hbox.add_child(_fish_info_next_btn)
+
+	# Close button (X) on the far right
+	var close_btn := Button.new()
+	close_btn.name = "FishInfoCloseBtn"
+	close_btn.text = "✕"
+	close_btn.size = Vector2(24, 24)
+	close_btn.add_theme_font_size_override("font_size", 12)
+	close_btn.pressed.connect(_hide_fish_info)
+	top_hbox.add_child(close_btn)
 
 	_fish_info_name_en = Label.new()
 	_fish_info_name_en.name = "FishInfoNameEn"

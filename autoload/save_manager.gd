@@ -21,10 +21,30 @@ func _process(_delta: float) -> void:
 
 func save_game() -> void:
 	var data := Global.get_save_data()
+	# 收集鱼缸中所有鱼的数据
+	var fish_data := _collect_fish_data()
+	if not fish_data.is_empty():
+		data["fish"] = fish_data
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(data))
 		file.close()
+
+
+func _collect_fish_data() -> Array:
+	var fish_list: Array = []
+	var main := get_tree().current_scene
+	if main and main.has_node("Aquarium/FishContainer"):
+		var container = main.get_node("Aquarium/FishContainer")
+		for fish in container.get_children():
+			fish_list.append({
+				"species": fish.species,
+				"level": fish.level,
+				"hunger": fish.hunger,
+				"x": fish.position.x,
+				"y": fish.position.y,
+			})
+	return fish_list
 
 
 func load_game() -> bool:
@@ -37,6 +57,8 @@ func load_game() -> bool:
 		var json := JSON.new()
 		var parse_result := json.parse(json_str)
 		if parse_result == OK and json.data is Dictionary:
+			# 先提取鱼数据，再恢复全局状态
+			Global.pending_fish_data = json.data.get("fish", [])
 			Global.load_save_data(json.data)
 			return true
 	return false

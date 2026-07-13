@@ -61,6 +61,7 @@ func _update_appearance() -> void:
 	
 	var scale_factor := 0.5 + level * 0.8 + species * 0.15
 	sprite.scale = Vector2(scale_factor, scale_factor) * 0.6
+	sprite.flip_h = direction < 0
 	
 	level_label.text = "Lv.%d" % [get_level()]
 	level_label.modulate = Color(1, 1, 1, 0.8)
@@ -99,7 +100,7 @@ func _swim(delta: float) -> void:
 	global_position += dir_vec * speed * delta
 	
 	direction = sign(dir_vec.x)
-	sprite.scale.x = abs(sprite.scale.x) * direction
+	sprite.flip_h = direction < 0
 
 
 func _eat(delta: float) -> void:
@@ -113,7 +114,7 @@ func _eat(delta: float) -> void:
 	global_position += dir_vec * speed * delta
 	
 	direction = sign(dir_vec.x)
-	sprite.scale.x = abs(sprite.scale.x) * direction
+	sprite.flip_h = direction < 0
 	
 	var dist := global_position.distance_to(target_food.global_position)
 	if dist < 20.0:

@@ -44,12 +44,17 @@ var _coin_label: Label
 var _earned_label: Label
 var _fish_count_label: Label
 
+# 装饰物放置模式
+var _placement_preview: Sprite2D = null
+var _placement_deco_type: int = -1
+
 
 func _ready() -> void:
 	Global.fish_added.connect(_on_fish_added)
 	Global.fish_sold.connect(_on_fish_sold)
 	Global.fish_info_requested.connect(_on_fish_info_requested)
 	Global.game_loaded.connect(_on_game_loaded)
+	Global.decoration_placed.connect(_on_decoration_placed)
 
 	get_window().size_changed.connect(_on_window_resized)
 
@@ -58,8 +63,7 @@ func _ready() -> void:
 
 	SaveManager.load_game()
 	_restore_fish_from_save()
-	_restore_auto_feeder()
-	_restore_auto_buyer()
+	# 装饰物和设备的恢复由 _on_game_loaded 信号处理
 
 
 func _on_window_resized() -> void:
@@ -146,6 +150,7 @@ func _on_fish_sold(_fish: Node2D, _price: int) -> void:
 
 
 func _on_game_loaded() -> void:
+	_restore_decorations_from_save()
 	_restore_auto_feeder()
 	_restore_auto_buyer()
 
@@ -164,6 +169,9 @@ func _process(_delta: float) -> void:
 	_handle_input()
 	if _fish_info_panel and _fish_info_panel.visible:
 		_refresh_fish_info_panel()
+	
+	if Global.decoration_placement_active:
+		_update_placement_preview()
 
 
 func _handle_input() -> void:
@@ -176,6 +184,8 @@ func _handle_input() -> void:
 			_hide_fish_info()
 		elif Global.sell_mode:
 			Global.sell_mode = false
+		elif Global.decoration_placement_active:
+			_cancel_placement()
 
 	var minus_pressed := Input.is_key_pressed(KEY_MINUS)
 	var equal_pressed := Input.is_key_pressed(KEY_EQUAL)
@@ -194,6 +204,14 @@ func _handle_input() -> void:
 			_navigate_fish(-1)
 		if Input.is_action_just_pressed("ui_right"):
 			_navigate_fish(1)
+
+
+func _input(event: InputEvent) -> void:
+	if Global.decoration_placement_active and not shop_panel_open and event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			_confirm_placement()
+		elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+			_cancel_placement()
 
 
 func _setup_ui() -> void:
@@ -474,6 +492,8 @@ func _toggle_sell_mode(btn: Button) -> void:
 
 
 func toggle_shop() -> void:
+	if Global.decoration_placement_active:
+		return
 	shop_panel_open = not shop_panel_open
 	var ui := get_node("UI")
 	ui.get_node("ShopBg").visible = shop_panel_open
@@ -585,11 +605,110 @@ func _buy_fish(species: int) -> void:
 
 func _buy_decoration(deco_type: int) -> void:
 	var cost: int = DecorationData.get_cost(deco_type)
+	if not Global.can_afford(cost):
+		return
 	if Global.spend(cost):
-		Global.owned_decorations.append(deco_type)
-		Global.decoration_added.emit(deco_type)
+		# 先关闭商店，再进入放置模式（否则 toggle_shop 会被放置模式拦截）
+		toggle_shop()
+		_enter_placement_mode(deco_type)
 		Global.save_dirty = true
 		_refresh_shop_ui()
+
+
+# ═══════════════════════════════════════════════════════════
+#  装饰物放置模式
+# ═══════════════════════════════════════════════════════════
+
+func _enter_placement_mode(deco_type: int) -> void:
+	"""进入放置模式：鼠标跟随预览，点击放置"""
+	Global.decoration_placement_active = true
+	_placement_deco_type = deco_type
+	
+	# 创建预览精灵
+	_placement_preview = Sprite2D.new()
+	_placement_preview.name = "PlacementPreview"
+	var svg_path := DecorationData.get_svg_path(deco_type)
+	if ResourceLoader.exists(svg_path):
+		_placement_preview.texture = load(svg_path)
+	_placement_preview.scale = Vector2(0.5, 0.5)
+	_placement_preview.modulate = Color(1, 1, 1, 0.6)  # 半透明
+	_placement_preview.z_index = 10
+	decoration_container.add_child(_placement_preview)
+	
+	_update_placement_preview()
+
+
+func _update_placement_preview() -> void:
+	"""更新预览跟随鼠标位置"""
+	if _placement_preview == null:
+		return
+	var mouse_pos := get_global_mouse_position()
+	# 限制在鱼缸范围内
+	var margin := 20.0
+	var clamped_x := clampf(mouse_pos.x, margin, aquarium_bounds.size.x - margin)
+	var clamped_y := clampf(mouse_pos.y, aquarium_bounds.size.y * 0.3, aquarium_bounds.size.y - margin)
+	_placement_preview.position = Vector2(clamped_x, clamped_y)
+
+
+func _confirm_placement() -> void:
+	"""确认放置装饰物"""
+	if _placement_preview == null:
+		return
+	
+	var pos := _placement_preview.position
+	_place_decoration(_placement_deco_type, pos)
+	Global.owned_decorations.append(_placement_deco_type)
+	Global.decoration_placed.emit(_placement_deco_type, pos)
+	Global.save_dirty = true
+	_exit_placement_mode()
+
+
+func _cancel_placement() -> void:
+	"""取消放置，退还金币"""
+	if _placement_deco_type >= 0:
+		var cost := DecorationData.get_cost(_placement_deco_type)
+		Global.coins += cost  # 退款
+	_exit_placement_mode()
+
+
+func _exit_placement_mode() -> void:
+	"""退出放置模式，清理预览"""
+	Global.decoration_placement_active = false
+	_placement_deco_type = -1
+	if _placement_preview:
+		_placement_preview.queue_free()
+		_placement_preview = null
+
+
+func _place_decoration(deco_type: int, pos: Vector2) -> void:
+	"""在指定位置生成装饰物精灵"""
+	var svg_path := DecorationData.get_svg_path(deco_type)
+	if not ResourceLoader.exists(svg_path):
+		return
+	var deco := Sprite2D.new()
+	deco.texture = load(svg_path)
+	deco.position = pos
+	deco.scale = Vector2(0.5, 0.5)
+	decoration_container.add_child(deco)
+
+
+func _on_decoration_placed(_deco_type: int, _position: Vector2) -> void:
+	"""由 Global.decoration_placed 信号触发"""
+	pass
+
+
+func _restore_decorations_from_save() -> void:
+	"""从存档恢复已拥有的装饰物（随机放置）"""
+	# 清除现有装饰物，避免重复
+	for child in decoration_container.get_children():
+		if child.name != "PlacementPreview":
+			child.queue_free()
+	
+	for deco_type in Global.owned_decorations:
+		var margin := 100.0
+		var x := randf_range(margin, aquarium_bounds.size.x - margin)
+		var y := randf_range(aquarium_bounds.size.y * 0.4, aquarium_bounds.size.y - 20.0)
+		_place_decoration(deco_type, Vector2(x, y))
 
 
 func _add_equip_shop_entry(parent: VBoxContainer, eq_type: int) -> void:

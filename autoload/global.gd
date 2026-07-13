@@ -10,7 +10,12 @@ signal fish_unlocked(species: int)
 @warning_ignore("unused_signal")
 signal decoration_added(deco_type: int)
 @warning_ignore("unused_signal")
+signal decoration_placed(deco_type: int, position: Vector2)
+@warning_ignore("unused_signal")
 signal equipment_added(eq_type: int)
+
+var decoration_placement_active: bool = false
+var pending_decoration_type: int = -1
 signal feed_mode_changed(active: bool)
 signal sell_mode_changed(active: bool)
 @warning_ignore("unused_signal")
@@ -191,6 +196,8 @@ func reset_state() -> void:
 	save_dirty = false
 	feed_mode = false
 	sell_mode = false
+	decoration_placement_active = false
+	pending_decoration_type = -1
 	unlocked_species = []
 	unlocked_species.resize(FishData.Species.COUNT)
 	unlocked_species[FishData.Species.GUPPY] = true

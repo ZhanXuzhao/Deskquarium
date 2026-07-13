@@ -22,6 +22,7 @@ var aquarium_bounds: Rect2:
 
 var _fish_shop_list: VBoxContainer
 var _deco_shop_list: VBoxContainer
+var _equip_shop_list: VBoxContainer
 var _fish_info_panel: Panel = null
 var _fish_info_name: Label = null
 var _fish_info_name_en: Label = null
@@ -48,6 +49,7 @@ func _ready() -> void:
 	Global.fish_sold.connect(_on_fish_sold)
 	Global.shop_panel_toggled.connect(_on_shop_toggled)
 	Global.fish_info_requested.connect(_on_fish_info_requested)
+	Global.game_loaded.connect(_on_game_loaded)
 
 	get_window().size_changed.connect(_on_window_resized)
 
@@ -56,6 +58,7 @@ func _ready() -> void:
 
 	SaveManager.load_game()
 	_restore_fish_from_save()
+	_restore_auto_feeder()
 
 
 func _on_window_resized() -> void:
@@ -65,6 +68,22 @@ func _on_window_resized() -> void:
 	for fish in fish_container.get_children():
 		if fish.has_method("set_aquarium_bounds"):
 			fish.set_aquarium_bounds(aquarium_bounds)
+	_reposition_auto_feeder()
+
+
+func _reposition_auto_feeder() -> void:
+	var equipment_container := $Aquarium.get_node_or_null("EquipmentContainer") as Node2D
+	if not equipment_container:
+		return
+	var feeder := equipment_container.get_node_or_null("AutoFeeder") as AutoFeeder
+	if feeder:
+		var view_size := get_viewport_rect().size
+		var margin := 50.0
+		var top_margin := 80.0
+		var right_margin := 100.0
+		var bottom_margin := 20.0
+		var aquarium_rect := Rect2(margin, top_margin, view_size.x - margin - right_margin, view_size.y - top_margin - bottom_margin)
+		feeder.position = Vector2(aquarium_rect.position.x + aquarium_rect.size.x / 2, aquarium_rect.position.y + aquarium_rect.size.y - 5)
 
 
 func _setup_aquarium() -> void:
@@ -128,6 +147,15 @@ func _on_fish_added(fish: Node2D) -> void:
 
 func _on_fish_sold(_fish: Node2D, _price: int) -> void:
 	Global.save_dirty = true
+
+
+func _on_game_loaded() -> void:
+	_restore_auto_feeder()
+
+
+func _restore_auto_feeder() -> void:
+	if Global.has_auto_feeder:
+		_spawn_auto_feeder()
 
 
 func _process(_delta: float) -> void:
@@ -373,6 +401,18 @@ func _build_shop_panel(ui: CanvasLayer, view_size: Vector2) -> void:
 	deco_tab.add_child(deco_scroll)
 	tab_container.add_child(deco_tab)
 
+	var equip_tab := VBoxContainer.new()
+	equip_tab.name = "设备"
+	var equip_scroll := ScrollContainer.new()
+	equip_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	equip_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_equip_shop_list = VBoxContainer.new()
+	_equip_shop_list.name = "EquipmentList"
+	_equip_shop_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	equip_scroll.add_child(_equip_shop_list)
+	equip_tab.add_child(equip_scroll)
+	tab_container.add_child(equip_tab)
+
 
 func _build_side_menu(ui: CanvasLayer, view_size: Vector2) -> void:
 	var buttons := [
@@ -441,12 +481,14 @@ func toggle_shop() -> void:
 
 
 func _refresh_shop_ui() -> void:
-	if _fish_shop_list == null or _deco_shop_list == null:
+	if _fish_shop_list == null or _deco_shop_list == null or _equip_shop_list == null:
 		return
 
 	for c in _fish_shop_list.get_children():
 		c.queue_free()
 	for c in _deco_shop_list.get_children():
+		c.queue_free()
+	for c in _equip_shop_list.get_children():
 		c.queue_free()
 
 	for species in FishData.Species.values() as Array[int]:
@@ -456,6 +498,9 @@ func _refresh_shop_ui() -> void:
 
 	for deco_type in DecorationData.DecorationType.values() as Array[int]:
 		_add_deco_shop_entry(_deco_shop_list, deco_type)
+
+	for eq_type in EquipmentData.EquipmentType.values() as Array[int]:
+		_add_equip_shop_entry(_equip_shop_list, eq_type)
 
 
 func _add_fish_shop_entry(parent: VBoxContainer, species: int) -> void:
@@ -542,6 +587,82 @@ func _buy_decoration(deco_type: int) -> void:
 		Global.decoration_added.emit(deco_type)
 		Global.save_dirty = true
 		_refresh_shop_ui()
+
+
+func _add_equip_shop_entry(parent: VBoxContainer, eq_type: int) -> void:
+	var panel := Panel.new()
+	panel.custom_minimum_size = Vector2(0, 45)
+
+	var hbox := HBoxContainer.new()
+	hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var name_label := Label.new()
+	name_label.text = EquipmentData.get_display_name(eq_type)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	# 判断是否已拥有
+	var already_owned := false
+	match eq_type:
+		EquipmentData.EquipmentType.AUTO_FEEDER:
+			already_owned = Global.has_auto_feeder
+
+	var cost: int = EquipmentData.get_cost(eq_type)
+	var cost_label := Label.new()
+	cost_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+	var buy_btn := Button.new()
+	if already_owned:
+		cost_label.text = "已拥有"
+		buy_btn.text = "已装备"
+		buy_btn.disabled = true
+	else:
+		cost_label.text = "¥%d" % cost
+		buy_btn.text = "购买"
+		buy_btn.disabled = Global.coins < cost
+		var et := eq_type
+		buy_btn.pressed.connect(func(): _buy_equipment(et))
+
+	hbox.add_child(name_label)
+	hbox.add_child(cost_label)
+	hbox.add_child(buy_btn)
+	panel.add_child(hbox)
+	parent.add_child(panel)
+
+
+func _buy_equipment(eq_type: int) -> void:
+	var cost: int = EquipmentData.get_cost(eq_type)
+	if Global.spend(cost):
+		match eq_type:
+			EquipmentData.EquipmentType.AUTO_FEEDER:
+				Global.has_auto_feeder = true
+				_spawn_auto_feeder()
+		Global.equipment_added.emit(eq_type)
+		Global.save_dirty = true
+		_refresh_shop_ui()
+
+
+func _spawn_auto_feeder() -> void:
+	var equipment_container := $Aquarium.get_node_or_null("EquipmentContainer") as Node2D
+	if not equipment_container:
+		return
+	
+	# 如果已有自动投喂机，移除旧的
+	for child in equipment_container.get_children():
+		if child is AutoFeeder:
+			child.queue_free()
+	
+	var feeder := AutoFeeder.new()
+	feeder.name = "AutoFeeder"
+	# 放置在鱼缸底部中央
+	var view_size := get_viewport_rect().size
+	var margin := 50.0
+	var top_margin := 80.0
+	var right_margin := 100.0
+	var bottom_margin := 20.0
+	var aquarium_rect := Rect2(margin, top_margin, view_size.x - margin - right_margin, view_size.y - top_margin - bottom_margin)
+	feeder.position = Vector2(aquarium_rect.position.x + aquarium_rect.size.x / 2, aquarium_rect.position.y + aquarium_rect.size.y - 5)
+	equipment_container.add_child(feeder)
 
 
 func do_feed() -> void:

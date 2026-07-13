@@ -15,3 +15,5 @@ centered = true
 [node name="FoodContainer" type="Node2D" parent="Aquarium"]
 
 [node name="DecorationContainer" type="Node2D" parent="Aquarium"]
+
+[node name="EquipmentContainer" type="Node2D" parent="Aquarium"]

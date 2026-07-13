@@ -7,6 +7,7 @@ signal fish_removed(fish: Node2D)
 signal fish_sold(fish: Node2D, price: int)
 signal fish_unlocked(species: int)
 signal decoration_added(deco_type: int)
+signal equipment_added(eq_type: int)
 signal feed_mode_changed(active: bool)
 signal sell_mode_changed(active: bool)
 signal shop_panel_toggled(visible: bool)
@@ -28,6 +29,10 @@ var total_earned: int = 0:
 
 var unlocked_species: Array[bool] = []
 var owned_decorations: Array[int] = []
+var has_auto_feeder: bool = false:
+	set(value):
+		has_auto_feeder = value
+		save_dirty = true
 var save_dirty: bool = false
 var fish_count: int = 0
 var max_fish: int = 6
@@ -112,6 +117,7 @@ func get_save_data() -> Dictionary:
 		"total_earned": total_earned,
 		"unlocked_species": unlocked_species.duplicate(),
 		"owned_decorations": owned_decorations.duplicate(),
+		"has_auto_feeder": has_auto_feeder,
 		"max_fish": max_fish,
 		"time_scale": Engine.time_scale,
 	}
@@ -128,6 +134,7 @@ func load_save_data(data: Dictionary) -> void:
 	owned_decorations.clear()
 	for d in deco_data:
 		owned_decorations.append(d)
+	has_auto_feeder = data.get("has_auto_feeder", false)
 	max_fish = data.get("max_fish", 6)
 	Engine.time_scale = data.get("time_scale", 1.0)
 	check_unlocks()
@@ -146,4 +153,5 @@ func reset_state() -> void:
 	unlocked_species.resize(FishData.Species.COUNT)
 	unlocked_species[FishData.Species.GUPPY] = true
 	owned_decorations.clear()
+	has_auto_feeder = false
 	Engine.time_scale = 1.0

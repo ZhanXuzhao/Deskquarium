@@ -74,11 +74,6 @@ func _process(delta: float) -> void:
 		FishState.EATING:
 			_eat(delta)
 	
-	if hunger <= 0.0:
-		state = FishState.DEAD
-		modulate = Color(0.5, 0.5, 0.5, 0.3)
-		rotation = PI
-	
 	_update_appearance()
 
 
@@ -113,9 +108,6 @@ func _swim(delta: float) -> void:
 	var dir_vec := (target_position - global_position).normalized()
 	var speed := swim_speed * (0.8 + level * 0.4)
 	
-	if hunger < 0.3:
-		speed *= 0.6
-	
 	global_position += dir_vec * speed * delta
 	
 	direction = sign(dir_vec.x)
@@ -129,7 +121,9 @@ func _eat(delta: float) -> void:
 		return
 	
 	var dir_vec := (target_food.global_position - global_position).normalized()
-	var speed := swim_speed * 1.5
+	# Lower hunger = faster swimming when competing for food
+	var speed_factor := 1.0 + (1.0 - hunger) * 2.0
+	var speed := swim_speed * speed_factor
 	global_position += dir_vec * speed * delta
 	
 	direction = sign(dir_vec.x)
@@ -142,7 +136,9 @@ func _eat(delta: float) -> void:
 
 func _eat_food(food: Node2D) -> void:
 	hunger = min(1.0, hunger + 0.3)
-	level = min(1.0, level + FishData.get_growth_rate(species))
+	# Growth only happens when satiety >= 50%
+	if hunger >= 0.5:
+		level = min(1.0, level + FishData.get_growth_rate(species))
 	
 	if food.has_method("consume"):
 		food.consume()
@@ -180,7 +176,9 @@ func get_sellable() -> bool:
 
 func feed() -> void:
 	hunger = min(1.0, hunger + 0.15)
-	level = min(1.0, level + FishData.get_growth_rate(species) * 0.5)
+	# Growth only happens when satiety >= 50%
+	if hunger >= 0.5:
+		level = min(1.0, level + FishData.get_growth_rate(species) * 0.5)
 
 
 func set_food_target(food: Node2D) -> void:

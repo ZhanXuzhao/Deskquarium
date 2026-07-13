@@ -221,6 +221,11 @@ func _setup_ui() -> void:
 	_build_timescale_label(ui, view_size)
 
 
+func _update_fish_count_display(_fish: Node2D = null) -> void:
+	if is_instance_valid(_fish_count_label) and is_instance_valid(fish_container):
+		_fish_count_label.text = "鱼: %d/%d" % [fish_container.get_child_count(), Global.max_fish]
+
+
 func _update_ui_positions() -> void:
 	var ui := get_node_or_null("UI") as CanvasLayer
 	if ui == null:
@@ -333,13 +338,9 @@ func _build_hud(ui: CanvasLayer, view_size: Vector2) -> void:
 	_fish_count_label.modulate = Color(1, 1, 1, 0.9)
 	ui.add_child(_fish_count_label)
 
-	var update_fish_count := func(_fish: Node2D = null):
-		if is_instance_valid(_fish_count_label) and is_instance_valid(fish_container):
-			_fish_count_label.text = "鱼: %d/%d" % [fish_container.get_child_count(), Global.max_fish]
-
-	Global.fish_added.connect(update_fish_count)
-	Global.fish_sold.connect(update_fish_count)
-	Global.game_loaded.connect(update_fish_count)
+	Global.fish_added.connect(_update_fish_count_display)
+	Global.fish_sold.connect(_update_fish_count_display)
+	Global.game_loaded.connect(_update_fish_count_display)
 
 	# Menu button
 	var menu_btn := Button.new()
@@ -781,6 +782,7 @@ func do_upgrade() -> void:
 	if Global.spend(cost):
 		Global.max_fish += 2
 		Global.save_dirty = true
+		_update_fish_count_display()
 
 
 # ── Fish Info Panel ──────────────────────────────────────────────────────

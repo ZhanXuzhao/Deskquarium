@@ -227,7 +227,7 @@ func _setup_ui() -> void:
 	_build_timescale_label(ui, view_size)
 
 
-func _update_fish_count_display(_fish: Node2D = null) -> void:
+func _update_fish_count_display(_fish: Node2D = null, _price: int = 0) -> void:
 	if is_instance_valid(_fish_count_label) and is_instance_valid(fish_container):
 		_fish_count_label.text = "鱼: %d/%d" % [fish_container.get_child_count(), Global.max_fish]
 

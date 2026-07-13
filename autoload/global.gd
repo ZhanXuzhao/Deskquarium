@@ -35,6 +35,14 @@ var has_auto_feeder: bool = false:
 	set(value):
 		has_auto_feeder = value
 		save_dirty = true
+var has_auto_sell: bool = false:
+	set(value):
+		has_auto_sell = value
+		save_dirty = true
+var auto_sell_enabled: bool = false:
+	set(value):
+		auto_sell_enabled = value
+		save_dirty = true
 var save_dirty: bool = false
 var fish_count: int = 0
 var max_fish: int = 6
@@ -120,6 +128,8 @@ func get_save_data() -> Dictionary:
 		"unlocked_species": unlocked_species.duplicate(),
 		"owned_decorations": owned_decorations.duplicate(),
 		"has_auto_feeder": has_auto_feeder,
+		"has_auto_sell": has_auto_sell,
+		"auto_sell_enabled": auto_sell_enabled,
 		"max_fish": max_fish,
 		"time_scale": Engine.time_scale,
 	}
@@ -137,6 +147,8 @@ func load_save_data(data: Dictionary) -> void:
 	for d in deco_data:
 		owned_decorations.append(d)
 	has_auto_feeder = data.get("has_auto_feeder", false)
+	has_auto_sell = data.get("has_auto_sell", false)
+	auto_sell_enabled = data.get("auto_sell_enabled", false)
 	max_fish = data.get("max_fish", 6)
 	Engine.time_scale = data.get("time_scale", 1.0)
 	check_unlocks()
@@ -156,4 +168,6 @@ func reset_state() -> void:
 	unlocked_species[FishData.Species.GUPPY] = true
 	owned_decorations.clear()
 	has_auto_feeder = false
+	has_auto_sell = false
+	auto_sell_enabled = false
 	Engine.time_scale = 1.0

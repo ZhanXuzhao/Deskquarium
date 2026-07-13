@@ -15,11 +15,7 @@ enum FishState {
 			_update_appearance()
 
 var level: float = 0.0
-var auto_sell: bool = false:
-	set(value):
-		auto_sell = value
-		if auto_sell and get_level() >= FishData.get_max_level(species):
-			_auto_sell()
+var _auto_sell_triggered: bool = false
 var hunger: float = 1.0:
 	set(value):
 		hunger = clampf(value, 0.0, 1.0)
@@ -80,6 +76,10 @@ func _process(delta: float) -> void:
 			_eat(delta)
 	
 	_update_appearance()
+	
+	# Auto-sell check: triggers when fish reaches max level with auto_sell enabled
+	if Global.auto_sell_enabled and get_level() >= FishData.get_max_level(species):
+		_auto_sell()
 
 
 func _swim(delta: float) -> void:
@@ -225,13 +225,14 @@ func sell() -> void:
 
 
 func _check_auto_sell() -> void:
-	if auto_sell and get_level() >= FishData.get_max_level(species):
+	if Global.auto_sell_enabled and get_level() >= FishData.get_max_level(species):
 		_auto_sell()
 
 
 func _auto_sell() -> void:
-	if not is_inside_tree():
+	if _auto_sell_triggered or not is_inside_tree():
 		return
+	_auto_sell_triggered = true
 	# Brief flash effect before selling
 	var tween := create_tween()
 	tween.tween_property(self, "modulate", Color(1, 1, 0, 1), 0.2)

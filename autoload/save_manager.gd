@@ -41,7 +41,6 @@ func _collect_fish_data() -> Array:
 				"species": fish.species,
 				"level": fish.level,
 				"hunger": fish.hunger,
-				"auto_sell": fish.auto_sell,
 				"x": fish.position.x,
 				"y": fish.position.y,
 			})

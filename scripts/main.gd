@@ -7,7 +7,7 @@ extends Node2D
 @onready var decoration_container: Node2D = $Aquarium/DecorationContainer
 
 var shop_panel_open: bool = false
-var _selected_fish: Node2D = null
+var _selected_fish: Fish = null
 var _prev_minus: bool = false
 var _prev_equal: bool = false
 
@@ -116,7 +116,6 @@ func _restore_fish_from_save() -> void:
 		var fish := _spawn_fish(species)
 		fish.level = fd.get("level", 0.0)
 		fish.hunger = fd.get("hunger", 1.0)
-		fish.auto_sell = fd.get("auto_sell", false)
 		fish.position = Vector2(fd.get("x", 0.0), fd.get("y", 0.0))
 
 
@@ -601,9 +600,13 @@ func _add_equip_shop_entry(parent: VBoxContainer, eq_type: int) -> void:
 
 	# 判断是否已拥有
 	var already_owned := false
+	var is_toggle := false
 	match eq_type:
 		EquipmentData.EquipmentType.AUTO_FEEDER:
 			already_owned = Global.has_auto_feeder
+		EquipmentData.EquipmentType.AUTO_SELL:
+			already_owned = Global.has_auto_sell
+			is_toggle = true
 
 	var cost: int = EquipmentData.get_cost(eq_type)
 	var cost_label := Label.new()
@@ -613,8 +616,13 @@ func _add_equip_shop_entry(parent: VBoxContainer, eq_type: int) -> void:
 	var buy_btn := Button.new()
 	if already_owned:
 		cost_label.text = "已拥有"
-		buy_btn.text = "已装备"
-		buy_btn.disabled = true
+		if is_toggle:
+			buy_btn.text = "开启" if Global.auto_sell_enabled else "关闭"
+			buy_btn.disabled = false
+			buy_btn.pressed.connect(_toggle_auto_sell)
+		else:
+			buy_btn.text = "已装备"
+			buy_btn.disabled = true
 	else:
 		cost_label.text = "¥%d" % cost
 		buy_btn.text = "购买"
@@ -636,6 +644,9 @@ func _buy_equipment(eq_type: int) -> void:
 			EquipmentData.EquipmentType.AUTO_FEEDER:
 				Global.has_auto_feeder = true
 				_spawn_auto_feeder()
+			EquipmentData.EquipmentType.AUTO_SELL:
+				Global.has_auto_sell = true
+				Global.auto_sell_enabled = true
 		Global.equipment_added.emit(eq_type)
 		Global.save_dirty = true
 		_refresh_shop_ui()
@@ -785,19 +796,12 @@ func _build_fish_info_panel(ui: CanvasLayer, _view_size: Vector2) -> void:
 	_fish_info_desc.size = Vector2(264, 30)
 	_fish_info_panel.add_child(_fish_info_desc)
 
-	# Bottom row: auto-sell checkbox + sell price label + sell button
+	# Bottom row: sell price label + sell button
 	var sell_hbox := HBoxContainer.new()
 	sell_hbox.position = Vector2(margin, margin + line_h * 6 + 4)
 	sell_hbox.size = Vector2(264, 24)
 	sell_hbox.add_theme_constant_override("separation", 4)
 	_fish_info_panel.add_child(sell_hbox)
-
-	var auto_sell_cb := CheckBox.new()
-	auto_sell_cb.name = "FishInfoAutoSell"
-	auto_sell_cb.text = "满级自售"
-	auto_sell_cb.add_theme_font_size_override("font_size", 10)
-	auto_sell_cb.toggled.connect(_on_auto_sell_toggled)
-	sell_hbox.add_child(auto_sell_cb)
 
 	_fish_info_sell = Label.new()
 	_fish_info_sell.name = "FishInfoSell"
@@ -825,9 +829,9 @@ func _update_fish_info_panel_position() -> void:
 
 
 func _on_fish_info_requested(fish: Node2D) -> void:
-	if not is_instance_valid(fish):
+	if not is_instance_valid(fish) or not fish is Fish:
 		return
-	_selected_fish = fish
+	_selected_fish = fish as Fish
 	_refresh_fish_info_panel()
 	_fish_info_panel.visible = true
 
@@ -852,12 +856,6 @@ func _refresh_fish_info_panel() -> void:
 	_fish_info_hunger.text = "饱食度: %d%%" % hunger_pct
 	_fish_info_desc.text = FishData.get_description(species)
 
-	# Update auto-sell checkbox
-	var auto_sell_cb := _fish_info_panel.get_node_or_null("FishInfoAutoSell") as CheckBox
-	if auto_sell_cb:
-		auto_sell_cb.set_pressed_no_signal(f.auto_sell)
-		auto_sell_cb.visible = f.get_sellable()
-
 	# Update sell info
 	if f.get_sellable():
 		_fish_info_sell.text = "售价: ¥%d" % f.get_sell_price()
@@ -875,8 +873,9 @@ func _navigate_fish(direction: int) -> void:
 		return
 	var idx := fish_list.find(_selected_fish)
 	var new_idx := (idx + direction + fish_list.size()) % fish_list.size()
-	_selected_fish = fish_list[new_idx]
-	_refresh_fish_info_panel()
+	_selected_fish = fish_list[new_idx] as Fish
+	if _selected_fish:
+		_refresh_fish_info_panel()
 
 
 func _on_fish_info_prev() -> void:
@@ -885,13 +884,6 @@ func _on_fish_info_prev() -> void:
 
 func _on_fish_info_next() -> void:
 	_navigate_fish(1)
-
-
-func _on_auto_sell_toggled(button_pressed: bool) -> void:
-	if _selected_fish == null or not is_instance_valid(_selected_fish):
-		return
-	_selected_fish.auto_sell = button_pressed
-	Global.save_dirty = true
 
 
 func _sell_selected_fish() -> void:
@@ -915,14 +907,21 @@ func _sell_selected_fish() -> void:
 		_hide_fish_info()
 	else:
 		var new_idx := (idx - 1) if (idx >= total - 1) else (idx + 1)
-		_selected_fish = fish_container.get_child(new_idx)
-		_refresh_fish_info_panel()
+		_selected_fish = fish_container.get_child(new_idx) as Fish
+		if _selected_fish:
+			_refresh_fish_info_panel()
 
 
 func _hide_fish_info() -> void:
 	_selected_fish = null
 	if _fish_info_panel:
 		_fish_info_panel.visible = false
+
+
+func _toggle_auto_sell() -> void:
+	Global.auto_sell_enabled = not Global.auto_sell_enabled
+	Global.save_dirty = true
+	_refresh_shop_ui()
 
 
 # ── Game Menu ───────────────────────────────────────────────────────────

@@ -93,16 +93,16 @@ static func get_max_level(species: Species) -> int:
 			return 15
 	return 1
 
-static func get_svg_path(species: Species) -> String:
+static func get_texture_path(species: Species) -> String:
 	match species:
 		Species.GUPPY:
-			return "res://assets/fish/fish_guppy.svg"
+			return "res://assets/fish/fish_guppy.png"
 		Species.GOLDFISH:
-			return "res://assets/fish/fish_goldfish.svg"
+			return "res://assets/fish/fish_goldfish.png"
 		Species.ANGELFISH:
-			return "res://assets/fish/fish_angelfish.svg"
+			return "res://assets/fish/fish_angelfish.png"
 		Species.AROWANA:
-			return "res://assets/fish/fish_arowana.svg"
+			return "res://assets/fish/fish_arowana.png"
 	return ""
 
 static func get_unlock_requirement(species: Species) -> Dictionary:

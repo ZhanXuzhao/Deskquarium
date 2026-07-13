@@ -53,9 +53,9 @@ func _ready() -> void:
 
 
 func _update_appearance() -> void:
-	var svg_path := FishData.get_svg_path(species)
-	if ResourceLoader.exists(svg_path):
-		var tex := load(svg_path) as Texture2D
+	var tex_path := FishData.get_texture_path(species)
+	if ResourceLoader.exists(tex_path):
+		var tex := load(tex_path) as Texture2D
 		if tex:
 			sprite.texture = tex
 	

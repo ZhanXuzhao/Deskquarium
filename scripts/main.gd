@@ -29,6 +29,10 @@ var _fish_info_level: Label = null
 var _fish_info_hunger: Label = null
 var _fish_info_desc: Label = null
 var _fish_info_sell: Label = null
+var _fish_info_index: Label = null
+var _fish_info_prev_btn: Button = null
+var _fish_info_next_btn: Button = null
+var _fish_info_sell_btn: Button = null
 var _timescale_label: Label = null
 var _game_menu_panel: Panel = null
 var _game_menu_bg: ColorRect = null
@@ -137,6 +141,13 @@ func _handle_input() -> void:
 		_timescale_changed()
 	_prev_minus = minus_pressed
 	_prev_equal = equal_pressed
+
+	# Fish info panel keyboard navigation
+	if _fish_info_panel and _fish_info_panel.visible and _selected_fish:
+		if Input.is_action_just_pressed("ui_left"):
+			_navigate_fish(-1)
+		if Input.is_action_just_pressed("ui_right"):
+			_navigate_fish(1)
 
 
 func _setup_ui() -> void:
@@ -558,18 +569,53 @@ func _on_shop_toggled(visible: bool) -> void:
 func _build_fish_info_panel(ui: CanvasLayer, view_size: Vector2) -> void:
 	_fish_info_panel = Panel.new()
 	_fish_info_panel.name = "FishInfoPanel"
-	_fish_info_panel.size = Vector2(220, 140)
+	_fish_info_panel.size = Vector2(280, 180)
 	_fish_info_panel.visible = false
 	ui.add_child(_fish_info_panel)
 
 	var margin := 8
 	var line_h := 20
 
+	# Top row: fish name + index + prev/next arrows
+	var top_hbox := HBoxContainer.new()
+	top_hbox.position = Vector2(margin, margin)
+	top_hbox.size = Vector2(264, 24)
+	top_hbox.add_theme_constant_override("separation", 4)
+	_fish_info_panel.add_child(top_hbox)
+
 	_fish_info_name = Label.new()
 	_fish_info_name.name = "FishInfoName"
-	_fish_info_name.position = Vector2(margin, margin)
 	_fish_info_name.add_theme_font_size_override("font_size", 16)
-	_fish_info_panel.add_child(_fish_info_name)
+	_fish_info_name.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	top_hbox.add_child(_fish_info_name)
+
+	_fish_info_index = Label.new()
+	_fish_info_index.name = "FishInfoIndex"
+	_fish_info_index.add_theme_font_size_override("font_size", 13)
+	_fish_info_index.modulate = Color(1, 1, 1, 0.6)
+	_fish_info_index.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	top_hbox.add_child(_fish_info_index)
+
+	# Spacer to push arrows to the right
+	var spacer := Control.new()
+	spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	top_hbox.add_child(spacer)
+
+	_fish_info_prev_btn = Button.new()
+	_fish_info_prev_btn.name = "FishInfoPrevBtn"
+	_fish_info_prev_btn.text = "◀"
+	_fish_info_prev_btn.size = Vector2(28, 24)
+	_fish_info_prev_btn.add_theme_font_size_override("font_size", 12)
+	_fish_info_prev_btn.pressed.connect(_on_fish_info_prev)
+	top_hbox.add_child(_fish_info_prev_btn)
+
+	_fish_info_next_btn = Button.new()
+	_fish_info_next_btn.name = "FishInfoNextBtn"
+	_fish_info_next_btn.text = "▶"
+	_fish_info_next_btn.size = Vector2(28, 24)
+	_fish_info_next_btn.add_theme_font_size_override("font_size", 12)
+	_fish_info_next_btn.pressed.connect(_on_fish_info_next)
+	top_hbox.add_child(_fish_info_next_btn)
 
 	_fish_info_name_en = Label.new()
 	_fish_info_name_en.name = "FishInfoNameEn"
@@ -596,15 +642,30 @@ func _build_fish_info_panel(ui: CanvasLayer, view_size: Vector2) -> void:
 	_fish_info_desc.add_theme_font_size_override("font_size", 10)
 	_fish_info_desc.modulate = Color(1, 1, 1, 0.7)
 	_fish_info_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_fish_info_desc.size = Vector2(204, 30)
+	_fish_info_desc.size = Vector2(264, 30)
 	_fish_info_panel.add_child(_fish_info_desc)
+
+	# Bottom row: sell price label + sell button
+	var sell_hbox := HBoxContainer.new()
+	sell_hbox.position = Vector2(margin, margin + line_h * 6 + 4)
+	sell_hbox.size = Vector2(264, 24)
+	sell_hbox.add_theme_constant_override("separation", 8)
+	_fish_info_panel.add_child(sell_hbox)
 
 	_fish_info_sell = Label.new()
 	_fish_info_sell.name = "FishInfoSell"
-	_fish_info_sell.position = Vector2(margin, margin + line_h * 6 + 2)
 	_fish_info_sell.add_theme_font_size_override("font_size", 11)
 	_fish_info_sell.modulate = Color(1, 0.8, 0.4, 0.9)
-	_fish_info_panel.add_child(_fish_info_sell)
+	_fish_info_sell.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sell_hbox.add_child(_fish_info_sell)
+
+	_fish_info_sell_btn = Button.new()
+	_fish_info_sell_btn.name = "FishInfoSellBtn"
+	_fish_info_sell_btn.text = "出售"
+	_fish_info_sell_btn.size = Vector2(50, 24)
+	_fish_info_sell_btn.add_theme_font_size_override("font_size", 12)
+	_fish_info_sell_btn.pressed.connect(_sell_selected_fish)
+	sell_hbox.add_child(_fish_info_sell_btn)
 
 	_update_fish_info_panel_position()
 
@@ -631,15 +692,71 @@ func _refresh_fish_info_panel() -> void:
 	var species: int = f.species
 	var lv: int = f.get_level()
 	var hunger_pct: int = int(f.hunger * 100)
+
+	# Find index of selected fish in container
+	var fish_list := fish_container.get_children()
+	var idx := fish_list.find(f)
+	var total := fish_list.size()
+
 	_fish_info_name.text = FishData.get_species_name(species)
+	_fish_info_index.text = "#%d/%d" % [idx + 1, total]
 	_fish_info_name_en.text = FishData.get_species_name_en(species)
 	_fish_info_level.text = "等级: %d / %d" % [lv, FishData.get_max_level(species)]
 	_fish_info_hunger.text = "饱食度: %d%%" % hunger_pct
 	_fish_info_desc.text = FishData.get_description(species)
+
+	# Update sell info
 	if f.get_sellable():
 		_fish_info_sell.text = "售价: ¥%d" % f.get_sell_price()
+		_fish_info_sell_btn.visible = true
 	else:
 		_fish_info_sell.text = "状态: 死亡"
+		_fish_info_sell_btn.visible = false
+
+
+func _navigate_fish(direction: int) -> void:
+	if _selected_fish == null or not is_instance_valid(_selected_fish):
+		return
+	var fish_list := fish_container.get_children()
+	if fish_list.size() <= 1:
+		return
+	var idx := fish_list.find(_selected_fish)
+	var new_idx := (idx + direction + fish_list.size()) % fish_list.size()
+	_selected_fish = fish_list[new_idx]
+	_refresh_fish_info_panel()
+
+
+func _on_fish_info_prev() -> void:
+	_navigate_fish(-1)
+
+
+func _on_fish_info_next() -> void:
+	_navigate_fish(1)
+
+
+func _sell_selected_fish() -> void:
+	if _selected_fish == null or not is_instance_valid(_selected_fish):
+		return
+	var f := _selected_fish
+	if not f.get_sellable():
+		return
+
+	# Find current index before selling
+	var fish_list := fish_container.get_children()
+	var idx := fish_list.find(f)
+	var total := fish_list.size()
+
+	# Sell the fish (queues free, not immediate)
+	f.sell()
+
+	# After selling, pick the next fish
+	# Note: queue_free doesn't remove immediately, so the sold fish is still in the list
+	if total <= 1:
+		_hide_fish_info()
+	else:
+		var new_idx := (idx - 1) if (idx >= total - 1) else (idx + 1)
+		_selected_fish = fish_container.get_child(new_idx)
+		_refresh_fish_info_panel()
 
 
 func _hide_fish_info() -> void:

@@ -208,7 +208,7 @@ func _on_mouse_exited() -> void:
 	modulate = Color(1, 1, 1, 1)
 
 
-func _sell_fish() -> void:
+func sell() -> void:
 	var price := get_sell_price()
 	Global.earn(price)
 	Global.fish_count -= 1
@@ -217,6 +217,10 @@ func _sell_fish() -> void:
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, 0.3)
 	tween.tween_callback(queue_free)
+
+
+func _sell_fish() -> void:
+	sell()
 
 
 func _on_hunger_timeout() -> void:

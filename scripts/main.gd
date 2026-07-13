@@ -169,7 +169,7 @@ func _build_shop_panel(ui: CanvasLayer, view_size: Vector2) -> void:
 	close_btn.name = "CloseShopBtn"
 	close_btn.text = "关闭"
 	close_btn.position = Vector2(430, 10)
-	close_btn.pressed.connect(func(): Global.shop_panel_toggled.emit(false))
+	close_btn.pressed.connect(toggle_shop)
 	shop_panel.add_child(close_btn)
 
 	var tab_container := TabContainer.new()

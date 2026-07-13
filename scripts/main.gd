@@ -1,5 +1,7 @@
 extends Node2D
 
+const _AutoBuyerScript := preload("res://scripts/managers/auto_buyer.gd")
+
 @onready var aquarium: Node2D = $Aquarium
 @onready var bg_sprite: Sprite2D = $Aquarium/Background
 @onready var fish_container: Node2D = $Aquarium/FishContainer
@@ -58,6 +60,7 @@ func _ready() -> void:
 	SaveManager.load_game()
 	_restore_fish_from_save()
 	_restore_auto_feeder()
+	_restore_auto_buyer()
 
 
 func _on_window_resized() -> void:
@@ -67,22 +70,27 @@ func _on_window_resized() -> void:
 	for fish in fish_container.get_children():
 		if fish.has_method("set_aquarium_bounds"):
 			fish.set_aquarium_bounds(aquarium_bounds)
-	_reposition_auto_feeder()
+	_reposition_equipment()
 
 
-func _reposition_auto_feeder() -> void:
+func _reposition_equipment() -> void:
 	var equipment_container := $Aquarium.get_node_or_null("EquipmentContainer") as Node2D
 	if not equipment_container:
 		return
+	var view_size := get_viewport_rect().size
+	var margin := 50.0
+	var top_margin := 80.0
+	var right_margin := 100.0
+	var bottom_margin := 20.0
+	var aquarium_rect := Rect2(margin, top_margin, view_size.x - margin - right_margin, view_size.y - top_margin - bottom_margin)
+	
 	var feeder := equipment_container.get_node_or_null("AutoFeeder") as AutoFeeder
 	if feeder:
-		var view_size := get_viewport_rect().size
-		var margin := 50.0
-		var top_margin := 80.0
-		var right_margin := 100.0
-		var bottom_margin := 20.0
-		var aquarium_rect := Rect2(margin, top_margin, view_size.x - margin - right_margin, view_size.y - top_margin - bottom_margin)
-		feeder.position = Vector2(aquarium_rect.position.x + aquarium_rect.size.x / 2, aquarium_rect.position.y + aquarium_rect.size.y - 5)
+		feeder.position = Vector2(aquarium_rect.position.x + aquarium_rect.size.x / 2 - 20, aquarium_rect.position.y + aquarium_rect.size.y - 5)
+	
+	var buyer := equipment_container.get_node_or_null("AutoBuyer")
+	if buyer and buyer.get_script() == _AutoBuyerScript:
+		buyer.position = Vector2(aquarium_rect.position.x + aquarium_rect.size.x / 2 + 20, aquarium_rect.position.y + aquarium_rect.size.y - 5)
 
 
 func _setup_aquarium() -> void:
@@ -149,11 +157,17 @@ func _on_fish_sold(_fish: Node2D, _price: int) -> void:
 
 func _on_game_loaded() -> void:
 	_restore_auto_feeder()
+	_restore_auto_buyer()
 
 
 func _restore_auto_feeder() -> void:
 	if Global.has_auto_feeder:
 		_spawn_auto_feeder()
+
+
+func _restore_auto_buyer() -> void:
+	if Global.has_auto_buy:
+		_spawn_auto_buyer()
 
 
 func _process(_delta: float) -> void:
@@ -601,12 +615,16 @@ func _add_equip_shop_entry(parent: VBoxContainer, eq_type: int) -> void:
 	# 判断是否已拥有
 	var already_owned := false
 	var is_toggle := false
+	var is_auto_buy := false
 	match eq_type:
 		EquipmentData.EquipmentType.AUTO_FEEDER:
 			already_owned = Global.has_auto_feeder
 		EquipmentData.EquipmentType.AUTO_SELL:
 			already_owned = Global.has_auto_sell
 			is_toggle = true
+		EquipmentData.EquipmentType.AUTO_BUY:
+			already_owned = Global.has_auto_buy
+			is_auto_buy = true
 
 	var cost: int = EquipmentData.get_cost(eq_type)
 	var cost_label := Label.new()
@@ -620,6 +638,10 @@ func _add_equip_shop_entry(parent: VBoxContainer, eq_type: int) -> void:
 			buy_btn.text = "开启" if Global.auto_sell_enabled else "关闭"
 			buy_btn.disabled = false
 			buy_btn.pressed.connect(_toggle_auto_sell)
+		elif is_auto_buy:
+			buy_btn.text = "设置"
+			buy_btn.disabled = false
+			buy_btn.pressed.connect(_open_auto_buy_settings)
 		else:
 			buy_btn.text = "已装备"
 			buy_btn.disabled = true
@@ -636,6 +658,11 @@ func _add_equip_shop_entry(parent: VBoxContainer, eq_type: int) -> void:
 	panel.add_child(hbox)
 	parent.add_child(panel)
 
+	# 如果已拥有自动买鱼，在下方显示目标数量设置
+	if already_owned and is_auto_buy:
+		var settings_panel := _build_auto_buy_settings_panel()
+		panel.add_child(settings_panel)
+
 
 func _buy_equipment(eq_type: int) -> void:
 	var cost: int = EquipmentData.get_cost(eq_type)
@@ -647,6 +674,17 @@ func _buy_equipment(eq_type: int) -> void:
 			EquipmentData.EquipmentType.AUTO_SELL:
 				Global.has_auto_sell = true
 				Global.auto_sell_enabled = true
+			EquipmentData.EquipmentType.AUTO_BUY:
+				Global.has_auto_buy = true
+				# 默认每种鱼期望数量为 0（不自动购买）
+				if Global.auto_buy_targets.is_empty():
+					var targets := {}
+					for species in FishData.Species.values() as Array[int]:
+						if species == FishData.Species.COUNT:
+							continue
+						targets[species] = 0
+					Global.auto_buy_targets = targets
+				_spawn_auto_buyer()
 		Global.equipment_added.emit(eq_type)
 		Global.save_dirty = true
 		_refresh_shop_ui()
@@ -671,8 +709,31 @@ func _spawn_auto_feeder() -> void:
 	var right_margin := 100.0
 	var bottom_margin := 20.0
 	var aquarium_rect := Rect2(margin, top_margin, view_size.x - margin - right_margin, view_size.y - top_margin - bottom_margin)
-	feeder.position = Vector2(aquarium_rect.position.x + aquarium_rect.size.x / 2, aquarium_rect.position.y + aquarium_rect.size.y - 5)
+	feeder.position = Vector2(aquarium_rect.position.x + aquarium_rect.size.x / 2 - 20, aquarium_rect.position.y + aquarium_rect.size.y - 5)
 	equipment_container.add_child(feeder)
+
+
+func _spawn_auto_buyer() -> void:
+	var equipment_container := $Aquarium.get_node_or_null("EquipmentContainer") as Node2D
+	if not equipment_container:
+		return
+	
+	# 如果已有自动买鱼，移除旧的
+	for child in equipment_container.get_children():
+		if child.get_script() == _AutoBuyerScript:
+			child.queue_free()
+	
+	var buyer := _AutoBuyerScript.new()
+	buyer.name = "AutoBuyer"
+	# 放置在鱼缸底部中央（自动投喂机旁边）
+	var view_size := get_viewport_rect().size
+	var margin := 50.0
+	var top_margin := 80.0
+	var right_margin := 100.0
+	var bottom_margin := 20.0
+	var aquarium_rect := Rect2(margin, top_margin, view_size.x - margin - right_margin, view_size.y - top_margin - bottom_margin)
+	buyer.position = Vector2(aquarium_rect.position.x + aquarium_rect.size.x / 2 + 20, aquarium_rect.position.y + aquarium_rect.size.y - 5)
+	equipment_container.add_child(buyer)
 
 
 func do_feed() -> void:
@@ -922,6 +983,175 @@ func _toggle_auto_sell() -> void:
 	Global.auto_sell_enabled = not Global.auto_sell_enabled
 	Global.save_dirty = true
 	_refresh_shop_ui()
+
+
+# ── Auto-Buy Settings ───────────────────────────────────────────────────
+
+var _auto_buy_settings_panel: Panel = null
+
+func _open_auto_buy_settings() -> void:
+	# 弹出自动买鱼设置界面
+	var ui := get_node("UI")
+	
+	# 创建背景遮罩
+	var bg := ColorRect.new()
+	bg.name = "AutoBuySettingsBg"
+	bg.color = Color(0, 0, 0, 0.5)
+	bg.size = get_viewport_rect().size
+	bg.position = Vector2.ZERO
+	bg.visible = true
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	bg.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			_close_auto_buy_settings()
+	)
+	ui.add_child(bg)
+	
+	var panel := Panel.new()
+	panel.name = "AutoBuySettings"
+	panel.size = Vector2(400, 300)
+	panel.position = Vector2(get_viewport_rect().size.x / 2 - 200, get_viewport_rect().size.y / 2 - 150)
+	ui.add_child(panel)
+	_auto_buy_settings_panel = panel
+	
+	var title := Label.new()
+	title.text = "自动买鱼 - 目标数量设置"
+	title.position = Vector2(15, 12)
+	title.add_theme_font_size_override("font_size", 16)
+	panel.add_child(title)
+	
+	var close_btn := Button.new()
+	close_btn.text = "关闭"
+	close_btn.position = Vector2(330, 10)
+	close_btn.size = Vector2(60, 24)
+	close_btn.pressed.connect(_close_auto_buy_settings)
+	panel.add_child(close_btn)
+	
+	var scroll := ScrollContainer.new()
+	scroll.position = Vector2(10, 45)
+	scroll.size = Vector2(380, 210)
+	panel.add_child(scroll)
+	
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
+	
+	var targets: Dictionary = Global.auto_buy_targets
+	for species in FishData.Species.values() as Array[int]:
+		if species == FishData.Species.COUNT:
+			continue
+		if not Global.unlocked_species[species]:
+			continue
+		
+		var row := HBoxContainer.new()
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.custom_minimum_size = Vector2(0, 36)
+		row.add_theme_constant_override("separation", 8)
+		
+		var name_label := Label.new()
+		name_label.text = FishData.get_species_name(species)
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_label.add_theme_font_size_override("font_size", 14)
+		row.add_child(name_label)
+		
+		var count_label := Label.new()
+		var current_target: int = targets.get(species, 0)
+		count_label.text = "目标: %d" % current_target
+		count_label.add_theme_font_size_override("font_size", 13)
+		row.add_child(count_label)
+		
+		var dec_btn := Button.new()
+		dec_btn.text = "−"
+		dec_btn.size = Vector2(30, 28)
+		dec_btn.add_theme_font_size_override("font_size", 14)
+		row.add_child(dec_btn)
+		
+		var inc_btn := Button.new()
+		inc_btn.text = "+"
+		inc_btn.size = Vector2(30, 28)
+		inc_btn.add_theme_font_size_override("font_size", 14)
+		row.add_child(inc_btn)
+		
+		var s := species
+		dec_btn.pressed.connect(func():
+			var t: Dictionary = Global.auto_buy_targets
+			var cur: int = t.get(s, 0)
+			if cur > 0:
+				t[s] = cur - 1
+				Global.auto_buy_targets = t
+				count_label.text = "目标: %d" % t[s]
+		)
+		inc_btn.pressed.connect(func():
+			var t: Dictionary = Global.auto_buy_targets
+			var cur: int = t.get(s, 0)
+			t[s] = cur + 1
+			Global.auto_buy_targets = t
+			count_label.text = "目标: %d" % t[s]
+		)
+		
+		list.add_child(row)
+	
+	# 底部提示
+	var hint := Label.new()
+	hint.text = "提示：设置每种鱼期望的数量，鱼缸中不足时将自动购买"
+	hint.position = Vector2(15, 265)
+	hint.add_theme_font_size_override("font_size", 10)
+	hint.modulate = Color(1, 1, 1, 0.6)
+	hint.size = Vector2(370, 25)
+	panel.add_child(hint)
+
+
+func _close_auto_buy_settings() -> void:
+	var ui := get_node_or_null("UI") as CanvasLayer
+	if ui:
+		var bg := ui.get_node_or_null("AutoBuySettingsBg")
+		if bg:
+			bg.queue_free()
+		var panel := ui.get_node_or_null("AutoBuySettings")
+		if panel:
+			panel.queue_free()
+	_auto_buy_settings_panel = null
+
+
+func _build_auto_buy_settings_panel() -> VBoxContainer:
+	# 构建设备列表中的预览设置面板
+	var settings_container := VBoxContainer.new()
+	settings_container.name = "AutoBuySettingsPreview"
+	settings_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	settings_container.add_theme_constant_override("separation", 2)
+	
+	var targets: Dictionary = Global.auto_buy_targets
+	if targets.is_empty():
+		return settings_container
+	
+	for species in FishData.Species.values() as Array[int]:
+		if species == FishData.Species.COUNT:
+			continue
+		if not Global.unlocked_species[species]:
+			continue
+		
+		var target: int = targets.get(species, 0)
+		if target <= 0:
+			continue
+		
+		var row := HBoxContainer.new()
+		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		
+		var name_label := Label.new()
+		name_label.text = FishData.get_species_name(species)
+		name_label.add_theme_font_size_override("font_size", 11)
+		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row.add_child(name_label)
+		
+		var count_label := Label.new()
+		count_label.text = "目标: %d" % target
+		count_label.add_theme_font_size_override("font_size", 11)
+		count_label.modulate = Color(1, 1, 0.6, 0.9)
+		row.add_child(count_label)
+		
+		settings_container.add_child(row)
+	
+	return settings_container
 
 
 # ── Game Menu ───────────────────────────────────────────────────────────

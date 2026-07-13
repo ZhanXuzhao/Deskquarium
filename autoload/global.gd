@@ -43,6 +43,14 @@ var auto_sell_enabled: bool = false:
 	set(value):
 		auto_sell_enabled = value
 		save_dirty = true
+var has_auto_buy: bool = false:
+	set(value):
+		has_auto_buy = value
+		save_dirty = true
+var auto_buy_targets: Dictionary = {}:
+	set(value):
+		auto_buy_targets = value
+		save_dirty = true
 var save_dirty: bool = false
 var fish_count: int = 0
 var max_fish: int = 6
@@ -130,6 +138,8 @@ func get_save_data() -> Dictionary:
 		"has_auto_feeder": has_auto_feeder,
 		"has_auto_sell": has_auto_sell,
 		"auto_sell_enabled": auto_sell_enabled,
+		"has_auto_buy": has_auto_buy,
+		"auto_buy_targets": auto_buy_targets.duplicate(),
 		"max_fish": max_fish,
 		"time_scale": Engine.time_scale,
 	}
@@ -149,6 +159,8 @@ func load_save_data(data: Dictionary) -> void:
 	has_auto_feeder = data.get("has_auto_feeder", false)
 	has_auto_sell = data.get("has_auto_sell", false)
 	auto_sell_enabled = data.get("auto_sell_enabled", false)
+	has_auto_buy = data.get("has_auto_buy", false)
+	auto_buy_targets = data.get("auto_buy_targets", {}).duplicate()
 	max_fish = data.get("max_fish", 6)
 	Engine.time_scale = data.get("time_scale", 1.0)
 	check_unlocks()
@@ -170,4 +182,6 @@ func reset_state() -> void:
 	has_auto_feeder = false
 	has_auto_sell = false
 	auto_sell_enabled = false
+	has_auto_buy = false
+	auto_buy_targets = {}
 	Engine.time_scale = 1.0

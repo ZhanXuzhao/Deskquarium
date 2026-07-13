@@ -6,8 +6,6 @@ class_name AutoFeeder
 var check_interval: float = 5.0
 var _elapsed: float = 0.0
 
-## 每次投喂的鱼食数量
-var feed_count: int = 3
 ## 每次投喂花费
 var feed_cost: int = 10
 
@@ -39,6 +37,9 @@ func _try_auto_feed() -> void:
 	if not is_inside_tree():
 		return
 	
+	if not Global.auto_feeder_enabled:
+		return
+	
 	# 查找鱼缸中的食物容器
 	var aquarium := get_parent().get_parent()  # EquipmentContainer -> Aquarium -> Main
 	if not aquarium:
@@ -66,7 +67,7 @@ func _do_auto_feed(food_container: Node2D) -> void:
 	var pellet_scene := preload("res://scenes/food/food_pellet.tscn")
 	var pellet_script := preload("res://scripts/food/food_pellet.gd")
 	
-	for i in feed_count:
+	for i in Global.auto_feeder_feed_count:
 		var pellet := pellet_scene.instantiate()
 		pellet.set_script(pellet_script)
 		var margin := 80.0

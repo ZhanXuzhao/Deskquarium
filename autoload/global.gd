@@ -35,6 +35,14 @@ var has_auto_feeder: bool = false:
 	set(value):
 		has_auto_feeder = value
 		save_dirty = true
+var auto_feeder_enabled: bool = true:
+	set(value):
+		auto_feeder_enabled = value
+		save_dirty = true
+var auto_feeder_feed_count: int = 3:
+	set(value):
+		auto_feeder_feed_count = max(value, 1)
+		save_dirty = true
 var has_auto_sell: bool = false:
 	set(value):
 		has_auto_sell = value
@@ -136,6 +144,8 @@ func get_save_data() -> Dictionary:
 		"unlocked_species": unlocked_species.duplicate(),
 		"owned_decorations": owned_decorations.duplicate(),
 		"has_auto_feeder": has_auto_feeder,
+		"auto_feeder_enabled": auto_feeder_enabled,
+		"auto_feeder_feed_count": auto_feeder_feed_count,
 		"has_auto_sell": has_auto_sell,
 		"auto_sell_enabled": auto_sell_enabled,
 		"has_auto_buy": has_auto_buy,
@@ -157,10 +167,16 @@ func load_save_data(data: Dictionary) -> void:
 	for d in deco_data:
 		owned_decorations.append(d)
 	has_auto_feeder = data.get("has_auto_feeder", false)
+	auto_feeder_enabled = data.get("auto_feeder_enabled", true)
+	auto_feeder_feed_count = data.get("auto_feeder_feed_count", 3)
 	has_auto_sell = data.get("has_auto_sell", false)
 	auto_sell_enabled = data.get("auto_sell_enabled", false)
 	has_auto_buy = data.get("has_auto_buy", false)
-	auto_buy_targets = data.get("auto_buy_targets", {}).duplicate()
+	var raw_targets = data.get("auto_buy_targets", {})
+	var converted_targets := {}
+	for key in raw_targets:
+		converted_targets[int(key)] = raw_targets[key]
+	auto_buy_targets = converted_targets
 	max_fish = data.get("max_fish", 6)
 	Engine.time_scale = data.get("time_scale", 1.0)
 	check_unlocks()
@@ -180,6 +196,8 @@ func reset_state() -> void:
 	unlocked_species[FishData.Species.GUPPY] = true
 	owned_decorations.clear()
 	has_auto_feeder = false
+	auto_feeder_enabled = true
+	auto_feeder_feed_count = 3
 	has_auto_sell = false
 	auto_sell_enabled = false
 	has_auto_buy = false

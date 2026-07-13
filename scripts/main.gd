@@ -284,7 +284,7 @@ func _update_ui_positions() -> void:
 
 	# Timescale label
 	if _timescale_label:
-		_timescale_label.position = Vector2(view_size.x - 120, view_size.y - 35)
+		_timescale_label.position = Vector2(view_size.x - 280, 15)
 
 
 func _build_hud(ui: CanvasLayer, view_size: Vector2) -> void:
@@ -603,7 +603,11 @@ func _buy_decoration(deco_type: int) -> void:
 
 func _add_equip_shop_entry(parent: VBoxContainer, eq_type: int) -> void:
 	var panel := Panel.new()
-	panel.custom_minimum_size = Vector2(0, 45)
+	panel.custom_minimum_size = Vector2(0, 75 if eq_type == EquipmentData.EquipmentType.AUTO_FEEDER else 45)
+
+	var vbox := VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 	var hbox := HBoxContainer.new()
 	hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -619,6 +623,7 @@ func _add_equip_shop_entry(parent: VBoxContainer, eq_type: int) -> void:
 	match eq_type:
 		EquipmentData.EquipmentType.AUTO_FEEDER:
 			already_owned = Global.has_auto_feeder
+			is_toggle = true
 		EquipmentData.EquipmentType.AUTO_SELL:
 			already_owned = Global.has_auto_sell
 			is_toggle = true
@@ -635,9 +640,14 @@ func _add_equip_shop_entry(parent: VBoxContainer, eq_type: int) -> void:
 	if already_owned:
 		cost_label.text = "已拥有"
 		if is_toggle:
-			buy_btn.text = "开启" if Global.auto_sell_enabled else "关闭"
-			buy_btn.disabled = false
-			buy_btn.pressed.connect(_toggle_auto_sell)
+			if eq_type == EquipmentData.EquipmentType.AUTO_FEEDER:
+				buy_btn.text = "开启" if Global.auto_feeder_enabled else "关闭"
+				buy_btn.disabled = false
+				buy_btn.pressed.connect(_toggle_auto_feeder)
+			else:
+				buy_btn.text = "开启" if Global.auto_sell_enabled else "关闭"
+				buy_btn.disabled = false
+				buy_btn.pressed.connect(_toggle_auto_sell)
 		elif is_auto_buy:
 			buy_btn.text = "设置"
 			buy_btn.disabled = false
@@ -655,13 +665,19 @@ func _add_equip_shop_entry(parent: VBoxContainer, eq_type: int) -> void:
 	hbox.add_child(name_label)
 	hbox.add_child(cost_label)
 	hbox.add_child(buy_btn)
-	panel.add_child(hbox)
+	vbox.add_child(hbox)
+	panel.add_child(vbox)
 	parent.add_child(panel)
 
 	# 如果已拥有自动买鱼，在下方显示目标数量设置
 	if already_owned and is_auto_buy:
 		var settings_panel := _build_auto_buy_settings_panel()
-		panel.add_child(settings_panel)
+		vbox.add_child(settings_panel)
+
+	# 如果已拥有自动投喂器，在下方显示投喂数量设置
+	if already_owned and eq_type == EquipmentData.EquipmentType.AUTO_FEEDER:
+		var feed_settings := _build_auto_feeder_settings_panel()
+		vbox.add_child(feed_settings)
 
 
 func _buy_equipment(eq_type: int) -> void:
@@ -761,7 +777,7 @@ func do_feed() -> void:
 
 
 func do_upgrade() -> void:
-	var cost := 500 + Global.max_fish * 200
+	var cost := 500
 	if Global.spend(cost):
 		Global.max_fish += 2
 		Global.save_dirty = true
@@ -1154,6 +1170,68 @@ func _build_auto_buy_settings_panel() -> VBoxContainer:
 	return settings_container
 
 
+# ── Auto Feeder Settings ────────────────────────────────────────────────
+
+func _toggle_auto_feeder() -> void:
+	Global.auto_feeder_enabled = not Global.auto_feeder_enabled
+	Global.save_dirty = true
+	_refresh_shop_ui()
+
+
+func _build_auto_feeder_settings_panel() -> VBoxContainer:
+	var container := VBoxContainer.new()
+	container.name = "AutoFeederSettingsPreview"
+	container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	container.add_theme_constant_override("separation", 2)
+
+	var row := HBoxContainer.new()
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var label := Label.new()
+	label.text = "每次投喂数量"
+	label.add_theme_font_size_override("font_size", 11)
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(label)
+
+	var dec_btn := Button.new()
+	dec_btn.text = "−"
+	dec_btn.size = Vector2(26, 24)
+	dec_btn.add_theme_font_size_override("font_size", 12)
+	row.add_child(dec_btn)
+
+	var val_label := Label.new()
+	val_label.text = "%d" % Global.auto_feeder_feed_count
+	val_label.add_theme_font_size_override("font_size", 12)
+	val_label.modulate = Color(1, 1, 0.6, 0.9)
+	val_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	val_label.custom_minimum_size = Vector2(30, 0)
+	row.add_child(val_label)
+
+	var inc_btn := Button.new()
+	inc_btn.text = "+"
+	inc_btn.size = Vector2(26, 24)
+	inc_btn.add_theme_font_size_override("font_size", 12)
+	row.add_child(inc_btn)
+
+	dec_btn.pressed.connect(func():
+		var v := Global.auto_feeder_feed_count
+		if v > 1:
+			Global.auto_feeder_feed_count = v - 1
+			val_label.text = "%d" % Global.auto_feeder_feed_count
+			Global.save_dirty = true
+	)
+
+	inc_btn.pressed.connect(func():
+		var v := Global.auto_feeder_feed_count
+		Global.auto_feeder_feed_count = v + 1
+		val_label.text = "%d" % Global.auto_feeder_feed_count
+		Global.save_dirty = true
+	)
+
+	container.add_child(row)
+	return container
+
+
 # ── Game Menu ───────────────────────────────────────────────────────────
 
 func _build_game_menu(ui: CanvasLayer, view_size: Vector2) -> void:
@@ -1230,9 +1308,9 @@ func _build_timescale_label(ui: CanvasLayer, view_size: Vector2) -> void:
 	_timescale_label = Label.new()
 	_timescale_label.name = "TimescaleLabel"
 	_timescale_label.text = "x%.1f" % Engine.time_scale
-	_timescale_label.position = Vector2(view_size.x - 120, view_size.y - 35)
-	_timescale_label.add_theme_font_size_override("font_size", 14)
-	_timescale_label.modulate = Color(1, 1, 1, 0.5)
+	_timescale_label.position = Vector2(view_size.x - 280, 15)
+	_timescale_label.add_theme_font_size_override("font_size", 16)
+	_timescale_label.modulate = Color(1, 1, 1, 0.9)
 	ui.add_child(_timescale_label)
 
 	Global.game_loaded.connect(func():
@@ -1247,4 +1325,4 @@ func _timescale_changed() -> void:
 		# Brief flash effect
 		_timescale_label.modulate = Color(1, 1, 1, 1.0)
 		var tween := create_tween()
-		tween.tween_property(_timescale_label, "modulate", Color(1, 1, 1, 0.5), 1.0)
+		tween.tween_property(_timescale_label, "modulate", Color(1, 1, 1, 0.9), 1.0)

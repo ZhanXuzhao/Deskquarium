@@ -3,13 +3,13 @@ extends Node2D
 const _AutoBuyerScript := preload("res://scripts/managers/auto_buyer.gd")
 
 @onready var aquarium: Node2D = $Aquarium
-@onready var bg_sprite: Sprite2D = $Aquarium/Background
+@onready var bg_rect: ColorRect = $Aquarium/Background
 @onready var fish_container: Node2D = $Aquarium/FishContainer
 @onready var food_container: Node2D = $Aquarium/FoodContainer
 @onready var decoration_container: Node2D = $Aquarium/DecorationContainer
 
 var _bg_layer: CanvasLayer = null
-var _bg_rect: TextureRect = null
+var _bg_rect: ColorRect = null
 
 var shop_panel_open: bool = false
 var _selected_fish: Fish = null
@@ -90,20 +90,15 @@ func _reposition_equipment() -> void:
 
 
 func _setup_background_layer() -> void:
-	var bg_tex := load("res://assets/aquarium_bg.svg") as Texture2D
-	if not bg_tex:
-		return
-	
 	_bg_layer = CanvasLayer.new()
 	_bg_layer.name = "BackgroundLayer"
 	add_child(_bg_layer)
 	# layer = -1 确保背景渲染在所有内容（layer=0）的后面
 	_bg_layer.layer = -1
 	
-	_bg_rect = TextureRect.new()
+	_bg_rect = ColorRect.new()
 	_bg_rect.name = "BackgroundRect"
-	_bg_rect.texture = bg_tex
-	_bg_rect.stretch_mode = TextureRect.STRETCH_SCALE
+	_bg_rect.color = Color(0.35, 0.7, 0.9)
 	_bg_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_bg_layer.add_child(_bg_rect)
 	

@@ -5,7 +5,6 @@ class_name Aquarium
 @onready var fish_container: Node2D = $FishContainer
 @onready var food_container: Node2D = $FoodContainer
 @onready var decoration_container: Node2D = $DecorationContainer
-@onready var bg_sprite: Sprite2D = $Background
 @onready var click_area: Area2D = $ClickArea
 
 var food_pellets: Array[Node2D] = []

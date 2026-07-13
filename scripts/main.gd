@@ -8,6 +8,9 @@ const _AutoBuyerScript := preload("res://scripts/managers/auto_buyer.gd")
 @onready var food_container: Node2D = $Aquarium/FoodContainer
 @onready var decoration_container: Node2D = $Aquarium/DecorationContainer
 
+var _bg_layer: CanvasLayer = null
+var _bg_rect: TextureRect = null
+
 var shop_panel_open: bool = false
 var _selected_fish: Fish = null
 var _prev_minus: bool = false
@@ -16,11 +19,7 @@ var _prev_equal: bool = false
 var aquarium_bounds: Rect2:
 	get:
 		var view_size := get_viewport_rect().size
-		var margin := 50
-		var top_margin := 80
-		var right_margin := 100
-		var bottom_margin := 20
-		return Rect2(margin, top_margin, view_size.x - margin - right_margin, view_size.y - top_margin - bottom_margin)
+		return Rect2(0, 0, view_size.x, view_size.y)
 
 var _fish_shop_list: VBoxContainer
 var _deco_shop_list: VBoxContainer
@@ -54,7 +53,7 @@ func _ready() -> void:
 
 	get_window().size_changed.connect(_on_window_resized)
 
-	_setup_aquarium()
+	_setup_background_layer()
 	_setup_ui()
 
 	SaveManager.load_game()
@@ -64,13 +63,15 @@ func _ready() -> void:
 
 
 func _on_window_resized() -> void:
-	_setup_aquarium()
+	_update_background_size()
 	_update_ui_positions()
 	_update_fish_info_panel_position()
 	for fish in fish_container.get_children():
 		if fish.has_method("set_aquarium_bounds"):
 			fish.set_aquarium_bounds(aquarium_bounds)
 	_reposition_equipment()
+	if aquarium.has_method("_update_water_surface"):
+		aquarium._update_water_surface()
 
 
 func _reposition_equipment() -> void:
@@ -78,33 +79,43 @@ func _reposition_equipment() -> void:
 	if not equipment_container:
 		return
 	var view_size := get_viewport_rect().size
-	var margin := 50.0
-	var top_margin := 80.0
-	var right_margin := 100.0
-	var bottom_margin := 20.0
-	var aquarium_rect := Rect2(margin, top_margin, view_size.x - margin - right_margin, view_size.y - top_margin - bottom_margin)
 	
 	var feeder := equipment_container.get_node_or_null("AutoFeeder") as AutoFeeder
 	if feeder:
-		feeder.position = Vector2(aquarium_rect.position.x + aquarium_rect.size.x / 2 - 20, aquarium_rect.position.y + aquarium_rect.size.y - 5)
+		feeder.position = Vector2(view_size.x / 2 - 20, view_size.y - 5)
 	
 	var buyer := equipment_container.get_node_or_null("AutoBuyer")
 	if buyer and buyer.get_script() == _AutoBuyerScript:
-		buyer.position = Vector2(aquarium_rect.position.x + aquarium_rect.size.x / 2 + 20, aquarium_rect.position.y + aquarium_rect.size.y - 5)
+		buyer.position = Vector2(view_size.x / 2 + 20, view_size.y - 5)
 
 
-func _setup_aquarium() -> void:
+func _setup_background_layer() -> void:
 	var bg_tex := load("res://assets/aquarium_bg.svg") as Texture2D
-	if bg_tex:
-		bg_sprite.texture = bg_tex
-		var tex_size := bg_tex.get_size()
-		var view_size := get_viewport_rect().size
-		var scale_factor: float = min(
-			view_size.x / tex_size.x,
-			view_size.y / tex_size.y
-		)
-		bg_sprite.scale = Vector2(scale_factor, scale_factor)
-		bg_sprite.position = view_size / 2
+	if not bg_tex:
+		return
+	
+	_bg_layer = CanvasLayer.new()
+	_bg_layer.name = "BackgroundLayer"
+	add_child(_bg_layer)
+	# layer = -1 确保背景渲染在所有内容（layer=0）的后面
+	_bg_layer.layer = -1
+	
+	_bg_rect = TextureRect.new()
+	_bg_rect.name = "BackgroundRect"
+	_bg_rect.texture = bg_tex
+	_bg_rect.stretch_mode = TextureRect.STRETCH_SCALE
+	_bg_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bg_layer.add_child(_bg_rect)
+	
+	_update_background_size()
+
+
+func _update_background_size() -> void:
+	if _bg_rect == null:
+		return
+	var view_size := get_viewport_rect().size
+	_bg_rect.position = Vector2.ZERO
+	_bg_rect.size = view_size
 
 
 func add_fish_if_empty() -> void:

@@ -8,26 +8,62 @@ class_name Aquarium
 @onready var bg_sprite: Sprite2D = $Background
 @onready var click_area: Area2D = $ClickArea
 
-var aquarium_rect: Rect2 = Rect2(40, 60, 750, 460)
 var food_pellets: Array[Node2D] = []
+
+# 水面高度比例（占视口高度百分比，0.0~1.0）
+var water_surface_height_ratio: float = 0.06:
+	set(value):
+		water_surface_height_ratio = clampf(value, 0.0, 0.5)
+		_update_water_surface()
+
+var _water_surface: ColorRect = null
+var _water_surface_material: ShaderMaterial = null
+
+
+# 鱼缸边界 = 全窗口，无边距
+var aquarium_rect: Rect2:
+	get:
+		var view_size := get_viewport_rect().size
+		return Rect2(0, 0, view_size.x, view_size.y)
 
 
 func _ready() -> void:
 	Global.fish_added.connect(_on_fish_added)
 	Global.decoration_added.connect(_on_decoration_added)
+	# 不再设置 Aquarium 节点的缩放，由 main.gd 直接控制背景
+	_setup_water_surface()
+
+
+func _setup_water_surface() -> void:
+	var shader := preload("res://shaders/water_surface.gdshader") as Shader
+	if shader == null:
+		return
 	
-	if bg_sprite and bg_sprite.texture:
-		var tex_size := bg_sprite.texture.get_size() as Vector2
-		scale_aquarium_size(tex_size)
+	_water_surface_material = ShaderMaterial.new()
+	_water_surface_material.shader = shader
+	
+	_water_surface = ColorRect.new()
+	_water_surface.name = "WaterSurface"
+	_water_surface.material = _water_surface_material
+	_water_surface.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_water_surface)
+	
+	_update_water_surface()
 
 
-func scale_aquarium_size(tex_size: Vector2) -> void:
-	var screen_size := get_viewport_rect().size
-	var scale_factor: float = min(
-		screen_size.x / tex_size.x,
-		screen_size.y / tex_size.y
-	) * 0.9
-	scale = Vector2(scale_factor, scale_factor)
+func _update_water_surface() -> void:
+	if _water_surface == null:
+		return
+	
+	var view_size := get_viewport_rect().size
+	var surf_height := view_size.y * water_surface_height_ratio
+	
+	_water_surface.size = Vector2(view_size.x, surf_height)
+	_water_surface.position = Vector2.ZERO
+
+
+func set_water_surface_height_ratio(value: float) -> void:
+	water_surface_height_ratio = value
 
 
 func _on_fish_added(fish: Node2D) -> void:

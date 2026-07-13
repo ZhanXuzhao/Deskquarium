@@ -6,8 +6,15 @@ extends Node2D
 @onready var food_container: Node2D = $Aquarium/FoodContainer
 @onready var decoration_container: Node2D = $Aquarium/DecorationContainer
 
-var aquarium_bounds: Rect2 = Rect2(50, 80, 740, 440)
 var shop_panel_open: bool = false
+
+var aquarium_bounds: Rect2:
+	get:
+		var view_size := get_viewport_rect().size
+		var margin := 50
+		var top_margin := 80
+		var bottom_margin := 100
+		return Rect2(margin, top_margin, view_size.x - margin * 2, view_size.y - top_margin - bottom_margin)
 
 var _fish_shop_list: VBoxContainer
 var _deco_shop_list: VBoxContainer
@@ -18,11 +25,21 @@ func _ready() -> void:
 	Global.fish_sold.connect(_on_fish_sold)
 	Global.shop_panel_toggled.connect(_on_shop_toggled)
 
+	get_window().size_changed.connect(_on_window_resized)
+
 	_setup_aquarium()
 	_setup_ui()
 
 	SaveManager.load_game()
 	add_fish_if_empty()
+
+
+func _on_window_resized() -> void:
+	_setup_aquarium()
+	_update_ui_positions()
+	for fish in fish_container.get_children():
+		if fish.has_method("set_aquarium_bounds"):
+			fish.set_aquarium_bounds(aquarium_bounds)
 
 
 func _setup_aquarium() -> void:
@@ -94,6 +111,58 @@ func _setup_ui() -> void:
 	_build_hud(ui, view_size)
 	_build_shop_panel(ui, view_size)
 	_build_bottom_bar(ui, view_size)
+
+
+func _update_ui_positions() -> void:
+	var ui := get_node_or_null("UI") as CanvasLayer
+	if ui == null:
+		return
+
+	var view_size := get_viewport_rect().size
+
+	# HUD
+	var hud_bg := ui.get_node_or_null("HUDBg") as ColorRect
+	if hud_bg:
+		hud_bg.size = Vector2(view_size.x, 50)
+
+	var fish_count_label := ui.get_node_or_null("FishCountLabel") as Label
+	if fish_count_label:
+		fish_count_label.position = Vector2(view_size.x - 150, 15)
+
+	# Bottom bar
+	var bar_bg := ui.get_node_or_null("BottomBarBg") as ColorRect
+	if bar_bg:
+		bar_bg.size = Vector2(view_size.x, 70)
+		bar_bg.position = Vector2(0, view_size.y - 70)
+
+	for child in ui.get_children():
+		if child is Button and child.name.begins_with("Btn_"):
+			var action := child.name.trim_prefix("Btn_")
+			var buttons := [
+				{"action": "shop"},
+				{"action": "feed"},
+				{"action": "sell"},
+				{"action": "upgrade"},
+			]
+			var btn_count := buttons.size()
+			var btn_width := 80
+			var spacing := 30
+			var total_width := btn_count * btn_width + (btn_count - 1) * spacing
+			var start_x := (view_size.x - total_width) / 2
+			for i in btn_count:
+				if buttons[i].action == action:
+					child.position = Vector2(start_x + i * (btn_width + spacing), view_size.y - 65)
+					break
+
+	# Shop panel
+	var shop_bg := ui.get_node_or_null("ShopBg") as ColorRect
+	if shop_bg:
+		shop_bg.size = view_size
+		shop_bg.position = Vector2.ZERO
+
+	var shop_panel := ui.get_node_or_null("ShopPanel") as Panel
+	if shop_panel:
+		shop_panel.position = Vector2(view_size.x / 2 - 250, view_size.y / 2 - 210)
 
 
 func _build_hud(ui: CanvasLayer, view_size: Vector2) -> void:

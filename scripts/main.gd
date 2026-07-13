@@ -33,6 +33,10 @@ var _game_menu_panel: Panel = null
 var _game_menu_bg: ColorRect = null
 var _menu_open: bool = false
 
+var _coin_label: Label
+var _earned_label: Label
+var _fish_count_label: Label
+
 
 func _ready() -> void:
 	Global.fish_added.connect(_on_fish_added)
@@ -231,34 +235,41 @@ func _build_hud(ui: CanvasLayer, view_size: Vector2) -> void:
 	coin_icon.position = Vector2(30, 25)
 	ui.add_child(coin_icon)
 
-	var coin_label := Label.new()
-	coin_label.name = "CoinLabel"
-	coin_label.text = "金币: %d" % Global.coins
-	coin_label.position = Vector2(50, 12)
-	coin_label.add_theme_font_size_override("font_size", 18)
-	coin_label.modulate = Color(1, 1, 1, 0.9)
-	ui.add_child(coin_label)
-	Global.coins_changed.connect(func(amount: int): coin_label.text = "金币: %d" % amount)
+	_coin_label = Label.new()
+	_coin_label.name = "CoinLabel"
+	_coin_label.text = "金币: %d" % Global.coins
+	_coin_label.position = Vector2(50, 12)
+	_coin_label.add_theme_font_size_override("font_size", 18)
+	_coin_label.modulate = Color(1, 1, 1, 0.9)
+	ui.add_child(_coin_label)
+	Global.coins_changed.connect(func(amount: int):
+		if is_instance_valid(_coin_label):
+			_coin_label.text = "金币: %d" % amount
+	)
 
-	var earned_label := Label.new()
-	earned_label.name = "TotalEarnedLabel"
-	earned_label.text = "累计: %d" % Global.total_earned
-	earned_label.position = Vector2(50, 34)
-	earned_label.add_theme_font_size_override("font_size", 11)
-	earned_label.modulate = Color(1, 1, 1, 0.6)
-	ui.add_child(earned_label)
-	Global.total_earned_changed.connect(func(amount: int): earned_label.text = "累计: %d" % amount)
+	_earned_label = Label.new()
+	_earned_label.name = "TotalEarnedLabel"
+	_earned_label.text = "累计: %d" % Global.total_earned
+	_earned_label.position = Vector2(50, 34)
+	_earned_label.add_theme_font_size_override("font_size", 11)
+	_earned_label.modulate = Color(1, 1, 1, 0.6)
+	ui.add_child(_earned_label)
+	Global.total_earned_changed.connect(func(amount: int):
+		if is_instance_valid(_earned_label):
+			_earned_label.text = "累计: %d" % amount
+	)
 
-	var fish_count_label := Label.new()
-	fish_count_label.name = "FishCountLabel"
-	fish_count_label.text = "鱼: %d/%d" % [Global.fish_count, Global.max_fish]
-	fish_count_label.position = Vector2(view_size.x - 150, 15)
-	fish_count_label.add_theme_font_size_override("font_size", 16)
-	fish_count_label.modulate = Color(1, 1, 1, 0.9)
-	ui.add_child(fish_count_label)
+	_fish_count_label = Label.new()
+	_fish_count_label.name = "FishCountLabel"
+	_fish_count_label.text = "鱼: %d/%d" % [Global.fish_count, Global.max_fish]
+	_fish_count_label.position = Vector2(view_size.x - 150, 15)
+	_fish_count_label.add_theme_font_size_override("font_size", 16)
+	_fish_count_label.modulate = Color(1, 1, 1, 0.9)
+	ui.add_child(_fish_count_label)
 
-	var update_fish_count := func(_fish: Node2D):
-		fish_count_label.text = "鱼: %d/%d" % [fish_container.get_child_count(), Global.max_fish]
+	var update_fish_count := func(_fish: Node2D = null):
+		if is_instance_valid(_fish_count_label) and is_instance_valid(fish_container):
+			_fish_count_label.text = "鱼: %d/%d" % [fish_container.get_child_count(), Global.max_fish]
 
 	Global.fish_added.connect(update_fish_count)
 	Global.fish_sold.connect(update_fish_count)
@@ -393,7 +404,8 @@ func _toggle_sell_mode(btn: Button) -> void:
 	else:
 		btn.modulate = Color(1, 1, 1, 1)
 	Global.sell_mode_changed.connect(func(active: bool):
-		btn.modulate = Color(1, 0.5, 0.5) if active else Color(1, 1, 1, 1)
+		if is_instance_valid(btn):
+			btn.modulate = Color(1, 0.5, 0.5) if active else Color(1, 1, 1, 1)
 	, CONNECT_ONE_SHOT)
 
 

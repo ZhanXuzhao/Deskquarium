@@ -9,6 +9,9 @@ extends Node2D
 var aquarium_bounds: Rect2 = Rect2(50, 80, 740, 440)
 var shop_panel_open: bool = false
 
+var _fish_shop_list: VBoxContainer
+var _deco_shop_list: VBoxContainer
+
 
 func _ready() -> void:
 	Global.fish_added.connect(_on_fish_added)
@@ -181,22 +184,24 @@ func _build_shop_panel(ui: CanvasLayer, view_size: Vector2) -> void:
 	var fish_tab := VBoxContainer.new()
 	fish_tab.name = "鱼类"
 	var fish_scroll := ScrollContainer.new()
-	fish_scroll.size = Vector2(460, 310)
-	var fish_list := VBoxContainer.new()
-	fish_list.name = "FishList"
-	fish_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	fish_scroll.add_child(fish_list)
+	fish_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fish_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_fish_shop_list = VBoxContainer.new()
+	_fish_shop_list.name = "FishList"
+	_fish_shop_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fish_scroll.add_child(_fish_shop_list)
 	fish_tab.add_child(fish_scroll)
 	tab_container.add_child(fish_tab)
 
 	var deco_tab := VBoxContainer.new()
 	deco_tab.name = "装饰"
 	var deco_scroll := ScrollContainer.new()
-	deco_scroll.size = Vector2(460, 310)
-	var deco_list := VBoxContainer.new()
-	deco_list.name = "DecorationList"
-	deco_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	deco_scroll.add_child(deco_list)
+	deco_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	deco_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_deco_shop_list = VBoxContainer.new()
+	_deco_shop_list.name = "DecorationList"
+	_deco_shop_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	deco_scroll.add_child(_deco_shop_list)
 	deco_tab.add_child(deco_scroll)
 	tab_container.add_child(deco_tab)
 
@@ -272,26 +277,21 @@ func toggle_shop() -> void:
 
 
 func _refresh_shop_ui() -> void:
-	var ui := get_node("UI")
-	var shop_panel := ui.get_node("ShopPanel")
-	var fish_list := shop_panel.find_child("FishList", true, false)
-	var deco_list := shop_panel.find_child("DecorationList", true, false)
-
-	if fish_list == null or deco_list == null:
+	if _fish_shop_list == null or _deco_shop_list == null:
 		return
 
-	for c in fish_list.get_children():
+	for c in _fish_shop_list.get_children():
 		c.queue_free()
-	for c in deco_list.get_children():
+	for c in _deco_shop_list.get_children():
 		c.queue_free()
 
 	for species in FishData.Species.values() as Array[int]:
 		if species == FishData.Species.COUNT:
 			continue
-		_add_fish_shop_entry(fish_list, species)
+		_add_fish_shop_entry(_fish_shop_list, species)
 
 	for deco_type in DecorationData.DecorationType.values() as Array[int]:
-		_add_deco_shop_entry(deco_list, deco_type)
+		_add_deco_shop_entry(_deco_shop_list, deco_type)
 
 
 func _add_fish_shop_entry(parent: VBoxContainer, species: int) -> void:

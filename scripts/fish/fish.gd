@@ -219,9 +219,31 @@ func sell() -> void:
 	Global.fish_count -= 1
 	Global.fish_sold.emit(self, price)
 	Global.save_dirty = true
+	
+	_show_sell_label(price)
+	
 	var tween := create_tween()
-	tween.tween_property(self, "modulate:a", 0.0, 0.3)
+	tween.tween_property(self, "modulate:a", 0.0, 0.5)
 	tween.tween_callback(queue_free)
+
+
+func _show_sell_label(price: int) -> void:
+	var label := Label.new()
+	label.text = "+%d$" % price
+	label.add_theme_color_override("font_color", Color(1, 0.85, 0, 1))
+	label.add_theme_font_size_override("font_size", 28)
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.position = global_position - Vector2(0, 20)
+	label.z_index = 100
+	
+	get_parent().add_child(label)
+	
+	var tween := label.create_tween()
+	tween.set_trans(Tween.TRANS_CUBIC)
+	tween.set_ease(Tween.EASE_OUT)
+	tween.tween_property(label, "position", label.position + Vector2(0, -80), 3.0)
+	tween.tween_property(label, "modulate:a", 0.0, 0.5).set_delay(2.5)
+	tween.tween_callback(label.queue_free)
 
 
 func _check_auto_sell() -> void:

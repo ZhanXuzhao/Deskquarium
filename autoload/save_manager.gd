@@ -36,13 +36,15 @@ func _collect_fish_data() -> Array:
 	var main := get_tree().current_scene
 	if main and main.has_node("Aquarium/FishContainer"):
 		var container = main.get_node("Aquarium/FishContainer")
-		for fish in container.get_children():
+		for child in container.get_children():
+			if not child is Fish:
+				continue
 			fish_list.append({
-				"species": fish.species,
-				"level": fish.level,
-				"hunger": fish.hunger,
-				"x": fish.position.x,
-				"y": fish.position.y,
+				"species": child.species,
+				"level": child.level,
+				"hunger": child.hunger,
+				"x": child.position.x,
+				"y": child.position.y,
 			})
 	return fish_list
 

@@ -62,6 +62,7 @@ func spawn_food() -> void:
 		var margin := 80.0
 		var x := randf_range(aquarium_rect.position.x + margin, aquarium_rect.position.x + aquarium_rect.size.x - margin)
 		pellet.position = Vector2(x, aquarium_rect.position.y + 20)
+		pellet.bottom_y = aquarium_rect.position.y + aquarium_rect.size.y - 10
 		food_container.add_child(pellet)
 		food_pellets.append(pellet)
 		pellet.tree_exited.connect(_on_pellet_removed.bind(pellet))

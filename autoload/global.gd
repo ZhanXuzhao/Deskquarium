@@ -100,6 +100,7 @@ func get_save_data() -> Dictionary:
 		"unlocked_species": unlocked_species.duplicate(),
 		"owned_decorations": owned_decorations.duplicate(),
 		"max_fish": max_fish,
+		"time_scale": Engine.time_scale,
 	}
 
 
@@ -115,6 +116,7 @@ func load_save_data(data: Dictionary) -> void:
 	for d in deco_data:
 		owned_decorations.append(d)
 	max_fish = data.get("max_fish", 6)
+	Engine.time_scale = data.get("time_scale", 1.0)
 	check_unlocks()
 	game_loaded.emit()
 
@@ -131,3 +133,4 @@ func reset_state() -> void:
 	unlocked_species.resize(FishData.Species.COUNT)
 	unlocked_species[FishData.Species.GUPPY] = true
 	owned_decorations.clear()
+	Engine.time_scale = 1.0

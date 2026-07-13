@@ -1,6 +1,17 @@
 extends Node
 
 const SAVE_PATH: String = "user://deskquarium_save.json"
+var _auto_save_timer: Timer
+
+
+func _ready() -> void:
+	_auto_save_timer = Timer.new()
+	_auto_save_timer.name = "AutoSaveTimer"
+	_auto_save_timer.wait_time = 60.0
+	_auto_save_timer.autostart = true
+	_auto_save_timer.timeout.connect(_on_auto_save_timeout)
+	add_child(_auto_save_timer)
+
 
 func _process(_delta: float) -> void:
 	if Global.save_dirty:
@@ -36,3 +47,7 @@ func reset_save() -> void:
 		DirAccess.remove_absolute(SAVE_PATH)
 	Global.reset_state()
 	get_tree().reload_current_scene()
+
+
+func _on_auto_save_timeout() -> void:
+	save_game()

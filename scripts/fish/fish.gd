@@ -87,6 +87,24 @@ func _swim(delta: float) -> void:
 		state = FishState.EATING
 		return
 	
+	# Look for food on the bottom when hungry
+	if hunger < 0.8:
+		var food_container := get_parent().get_parent().get_node_or_null("FoodContainer") as Node2D
+		if food_container and food_container.get_child_count() > 0:
+			var nearest: Node2D = null
+			var nearest_dist: float = INF
+			for pellet in food_container.get_children():
+				if not is_instance_valid(pellet):
+					continue
+				var dist := global_position.distance_to(pellet.global_position)
+				if dist < nearest_dist:
+					nearest_dist = dist
+					nearest = pellet
+			if nearest:
+				target_food = nearest
+				state = FishState.EATING
+				return
+	
 	var dist := global_position.distance_to(target_position)
 	if dist < 10.0:
 		pick_new_target()

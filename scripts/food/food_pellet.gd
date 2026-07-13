@@ -3,8 +3,9 @@ extends Area2D
 class_name FoodPellet
 
 var sink_speed: float = 30.0
-var lifetime: float = 15.0
+var lifetime: float = 300.0
 var elapsed: float = 0.0
+var bottom_y: float = INF
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
@@ -29,9 +30,13 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	elapsed += delta
-	position.y += sink_speed * delta
+	
+	if position.y < bottom_y:
+		position.y += sink_speed * delta
+		if position.y >= bottom_y:
+			position.y = bottom_y
 
-	if elapsed > lifetime:
+	if elapsed > lifetime and position.y >= bottom_y:
 		_despawn()
 
 

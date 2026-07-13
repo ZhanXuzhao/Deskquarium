@@ -16,8 +16,9 @@ var aquarium_bounds: Rect2:
 		var view_size := get_viewport_rect().size
 		var margin := 50
 		var top_margin := 80
-		var bottom_margin := 100
-		return Rect2(margin, top_margin, view_size.x - margin * 2, view_size.y - top_margin - bottom_margin)
+		var right_margin := 100
+		var bottom_margin := 20
+		return Rect2(margin, top_margin, view_size.x - margin - right_margin, view_size.y - top_margin - bottom_margin)
 
 var _fish_shop_list: VBoxContainer
 var _deco_shop_list: VBoxContainer
@@ -111,6 +112,8 @@ func _on_fish_sold(_fish: Node2D, _price: int) -> void:
 
 func _process(_delta: float) -> void:
 	_handle_input()
+	if _fish_info_panel and _fish_info_panel.visible:
+		_refresh_fish_info_panel()
 
 
 func _handle_input() -> void:
@@ -145,7 +148,7 @@ func _setup_ui() -> void:
 
 	_build_hud(ui, view_size)
 	_build_shop_panel(ui, view_size)
-	_build_bottom_bar(ui, view_size)
+	_build_side_menu(ui, view_size)
 	_build_fish_info_panel(ui, view_size)
 	_build_game_menu(ui, view_size)
 	_build_timescale_label(ui, view_size)
@@ -167,12 +170,7 @@ func _update_ui_positions() -> void:
 	if fish_count_label:
 		fish_count_label.position = Vector2(view_size.x - 150, 15)
 
-	# Bottom bar
-	var bar_bg := ui.get_node_or_null("BottomBarBg") as ColorRect
-	if bar_bg:
-		bar_bg.size = Vector2(view_size.x, 70)
-		bar_bg.position = Vector2(0, view_size.y - 70)
-
+	# Side menu
 	for child in ui.get_children():
 		if child is Button and child.name.begins_with("Btn_"):
 			var action := child.name.trim_prefix("Btn_")
@@ -183,13 +181,14 @@ func _update_ui_positions() -> void:
 				{"action": "upgrade"},
 			]
 			var btn_count := buttons.size()
-			var btn_width := 80
-			var spacing := 30
-			var total_width := btn_count * btn_width + (btn_count - 1) * spacing
-			var start_x := (view_size.x - total_width) / 2
+			var btn_width := 70
+			var btn_height := 65
+			var spacing := 12
+			var total_height := btn_count * btn_height + (btn_count - 1) * spacing
+			var start_y := (view_size.y - total_height) / 2
 			for i in btn_count:
 				if buttons[i].action == action:
-					child.position = Vector2(start_x + i * (btn_width + spacing), view_size.y - 65)
+					child.position = Vector2(view_size.x - 85 + (85 - btn_width) / 2, start_y + i * (btn_height + spacing))
 					break
 
 	# Shop panel
@@ -348,14 +347,7 @@ func _build_shop_panel(ui: CanvasLayer, view_size: Vector2) -> void:
 	tab_container.add_child(deco_tab)
 
 
-func _build_bottom_bar(ui: CanvasLayer, view_size: Vector2) -> void:
-	var bar_bg := ColorRect.new()
-	bar_bg.name = "BottomBarBg"
-	bar_bg.color = Color(0, 0, 0, 0.4)
-	bar_bg.size = Vector2(view_size.x, 70)
-	bar_bg.position = Vector2(0, view_size.y - 70)
-	ui.add_child(bar_bg)
-
+func _build_side_menu(ui: CanvasLayer, view_size: Vector2) -> void:
 	var buttons := [
 		{"text": "商店", "icon": "res://assets/ui/ui_shop.svg", "action": "shop"},
 		{"text": "喂食", "icon": "res://assets/ui/ui_food.svg", "action": "feed"},
@@ -364,27 +356,29 @@ func _build_bottom_bar(ui: CanvasLayer, view_size: Vector2) -> void:
 	]
 
 	var btn_count := buttons.size()
-	var btn_width := 80
-	var spacing := 30
-	var total_width := btn_count * btn_width + (btn_count - 1) * spacing
-	var start_x := (view_size.x - total_width) / 2
+	var btn_width := 70
+	var btn_height := 65
+	var spacing := 12
+	var total_height := btn_count * btn_height + (btn_count - 1) * spacing
+	var start_y := (view_size.y - total_height) / 2
 
 	for i in btn_count:
 		var data: Dictionary = buttons[i]
-		var btn_x := start_x + i * (btn_width + spacing)
-		var btn_y := view_size.y - 65
+		var btn_x := view_size.x - 85 + (85 - btn_width) / 2
+		var btn_y := start_y + i * (btn_height + spacing)
 
 		var btn := Button.new()
 		btn.name = "Btn_%s" % data.action
 		btn.text = data.text
 		btn.position = Vector2(btn_x, btn_y)
-		btn.size = Vector2(btn_width, 60)
-		btn.add_theme_font_size_override("font_size", 11)
+		btn.size = Vector2(btn_width, btn_height)
+		btn.add_theme_font_size_override("font_size", 10)
 		ui.add_child(btn)
 
 		var tex := load(data.icon) as Texture2D
 		if tex:
 			btn.icon = tex
+			btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 		match data.action:
 			"shop":
@@ -527,20 +521,19 @@ func do_feed() -> void:
 	if fish_container.get_child_count() == 0:
 		return
 
-	var cost := 10 + 5 * fish_container.get_child_count()
-	if not Global.spend(cost):
+	if not Global.spend(10):
 		return
 
 	var pellet_scene := preload("res://scenes/food/food_pellet.tscn")
 	var pellet_script := preload("res://scripts/food/food_pellet.gd")
-	var count: int = min(3 + fish_container.get_child_count(), 8)
-	for i in count:
+	for i in 10:
 		var pellet := pellet_scene.instantiate()
 		pellet.set_script(pellet_script)
 
 		var margin := 80
 		var x := randf_range(aquarium_bounds.position.x + margin, aquarium_bounds.position.x + aquarium_bounds.size.x - margin)
 		pellet.position = Vector2(x, aquarium_bounds.position.y + 10)
+		pellet.bottom_y = aquarium_bounds.position.y + aquarium_bounds.size.y - 10
 		food_container.add_child(pellet)
 
 		for fish in fish_container.get_children():
@@ -671,8 +664,8 @@ func _build_game_menu(ui: CanvasLayer, view_size: Vector2) -> void:
 
 	_game_menu_panel = Panel.new()
 	_game_menu_panel.name = "GameMenuPanel"
-	_game_menu_panel.size = Vector2(220, 120)
-	_game_menu_panel.position = Vector2(view_size.x / 2 - 110, view_size.y / 2 - 60)
+	_game_menu_panel.size = Vector2(220, 160)
+	_game_menu_panel.position = Vector2(view_size.x / 2 - 110, view_size.y / 2 - 80)
 	_game_menu_panel.visible = false
 	ui.add_child(_game_menu_panel)
 
@@ -682,16 +675,23 @@ func _build_game_menu(ui: CanvasLayer, view_size: Vector2) -> void:
 	title.add_theme_font_size_override("font_size", 18)
 	_game_menu_panel.add_child(title)
 
+	var save_btn := Button.new()
+	save_btn.text = "保存游戏"
+	save_btn.position = Vector2(20, 45)
+	save_btn.size = Vector2(180, 30)
+	_game_menu_panel.add_child(save_btn)
+	save_btn.pressed.connect(_on_save_pressed)
+
 	var restart_btn := Button.new()
 	restart_btn.text = "重新开始游戏"
-	restart_btn.position = Vector2(20, 45)
+	restart_btn.position = Vector2(20, 82)
 	restart_btn.size = Vector2(180, 30)
 	_game_menu_panel.add_child(restart_btn)
 	restart_btn.pressed.connect(_on_restart_pressed)
 
 	var cancel_btn := Button.new()
 	cancel_btn.text = "取消"
-	cancel_btn.position = Vector2(20, 82)
+	cancel_btn.position = Vector2(20, 119)
 	cancel_btn.size = Vector2(180, 30)
 	_game_menu_panel.add_child(cancel_btn)
 	cancel_btn.pressed.connect(_toggle_game_menu)
@@ -706,6 +706,11 @@ func _toggle_game_menu() -> void:
 func _on_menu_bg_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		_toggle_game_menu()
+
+
+func _on_save_pressed() -> void:
+	SaveManager.save_game()
+	_toggle_game_menu()
 
 
 func _on_restart_pressed() -> void:
@@ -723,6 +728,11 @@ func _build_timescale_label(ui: CanvasLayer, view_size: Vector2) -> void:
 	_timescale_label.add_theme_font_size_override("font_size", 14)
 	_timescale_label.modulate = Color(1, 1, 1, 0.5)
 	ui.add_child(_timescale_label)
+
+	Global.game_loaded.connect(func():
+		if is_instance_valid(_timescale_label):
+			_timescale_label.text = "x%.1f" % Engine.time_scale
+	)
 
 
 func _timescale_changed() -> void:

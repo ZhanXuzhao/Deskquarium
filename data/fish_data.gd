@@ -146,4 +146,4 @@ static func get_hunger_drain_rate(species: Species) -> float:
 
 static func get_sell_price(fish_species: Species, level: int) -> int:
 	var base = get_base_sell_price(fish_species)
-	return int(base * (1.0 + 0.3 * level))
+	return int(base * (1.0 + 0.25 * (level - 1)))

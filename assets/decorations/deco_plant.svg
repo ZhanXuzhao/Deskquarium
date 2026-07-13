@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 120">
+  <defs>
+    <linearGradient id="stemGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4CAF50"/>
+      <stop offset="100%" stop-color="#2E7D32"/>
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#66BB6A"/>
+      <stop offset="100%" stop-color="#388E3C"/>
+    </linearGradient>
+  </defs>
+  <path d="M 30,120 Q 28,80 30,40 Q 32,30 30,15" fill="none" stroke="url(#stemGrad)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 30,60 Q 10,50 5,35 Q 15,45 30,55" fill="url(#leafGrad)"/>
+  <path d="M 30,50 Q 50,35 55,20 Q 48,35 30,48" fill="url(#leafGrad)"/>
+  <path d="M 30,40 Q 8,30 3,15 Q 12,28 30,38" fill="url(#leafGrad)"/>
+  <path d="M 30,35 Q 52,20 58,8 Q 50,22 30,33" fill="url(#leafGrad)"/>
+  <path d="M 30,25 Q 12,15 8,5 Q 15,18 30,23" fill="url(#leafGrad)" opacity="0.8"/>
+</svg>

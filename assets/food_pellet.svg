@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+  <defs>
+    <radialGradient id="pelletGrad" cx="0.35" cy="0.3" r="0.6">
+      <stop offset="0%" stop-color="#FFAB91"/>
+      <stop offset="70%" stop-color="#F4511E"/>
+      <stop offset="100%" stop-color="#BF360C"/>
+    </radialGradient>
+  </defs>
+  <circle cx="10" cy="10" r="8" fill="url(#pelletGrad)"/>
+  <circle cx="8" cy="8" r="2" fill="#FFCCBC" opacity="0.5"/>
+</svg>

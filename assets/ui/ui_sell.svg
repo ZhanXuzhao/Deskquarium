@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="sellGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#EF5350"/>
+      <stop offset="100%" stop-color="#B71C1C"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="28" fill="url(#sellGrad)" stroke="#B71C1C" stroke-width="2"/>
+  <path d="M 20,24 L 44,24" stroke="white" stroke-width="4" stroke-linecap="round"/>
+  <path d="M 28,24 L 28,16 L 36,16 L 36,24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 22,24 L 24,46 L 40,46 L 42,24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <text x="32" y="56" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="white" text-anchor="middle">$</text>
+</svg>

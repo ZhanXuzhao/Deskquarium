@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <radialGradient id="foodGrad" cx="0.4" cy="0.35" r="0.6">
+      <stop offset="0%" stop-color="#FF8A65"/>
+      <stop offset="60%" stop-color="#F4511E"/>
+      <stop offset="100%" stop-color="#BF360C"/>
+    </radialGradient>
+  </defs>
+  <circle cx="32" cy="32" r="28" fill="url(#foodGrad)" stroke="#BF360C" stroke-width="2"/>
+  <circle cx="32" cy="32" r="18" fill="none" stroke="#FFAB91" stroke-width="1.5" opacity="0.5"/>
+  <circle cx="32" cy="15" r="3" fill="#FFAB91" opacity="0.6"/>
+  <circle cx="22" cy="25" r="2.5" fill="#FFAB91" opacity="0.6"/>
+  <circle cx="42" cy="25" r="2.5" fill="#FFAB91" opacity="0.6"/>
+  <circle cx="26" cy="38" r="2" fill="#FFAB91" opacity="0.6"/>
+  <circle cx="38" cy="38" r="2" fill="#FFAB91" opacity="0.6"/>
+  <circle cx="32" cy="45" r="2.5" fill="#FFAB91" opacity="0.6"/>
+</svg>

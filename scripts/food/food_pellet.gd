@@ -1,0 +1,52 @@
+extends Area2D
+
+class_name FoodPellet
+
+var sink_speed: float = 30.0
+var lifetime: float = 15.0
+var elapsed: float = 0.0
+
+@onready var sprite: Sprite2D = $Sprite2D
+@onready var collision_shape: CollisionShape2D = $CollisionShape2D
+
+
+func _ready() -> void:
+	if sprite and sprite.texture == null:
+		sprite.texture = load("res://assets/food_pellet.svg")
+	
+	if collision_shape and collision_shape.shape == null:
+		var shape := CircleShape2D.new()
+		shape.radius = 8
+		collision_shape.shape = shape
+	
+	sprite.modulate = Color(1, 1, 1, 0.9)
+	
+	var fade_in := create_tween()
+	fade_in.tween_property(sprite, "modulate:a", 1.0, 0.2)
+	
+	body_entered.connect(_on_body_entered)
+
+
+func _process(delta: float) -> void:
+	elapsed += delta
+	position.y += sink_speed * delta
+
+	if elapsed > lifetime:
+		_despawn()
+
+
+func _on_body_entered(_body: Node2D) -> void:
+	pass
+
+
+func consume() -> void:
+	collision_shape.set_deferred("disabled", true)
+	var tween := create_tween()
+	tween.tween_property(sprite, "scale", Vector2.ZERO, 0.2)
+	tween.tween_callback(queue_free)
+
+
+func _despawn() -> void:
+	var tween := create_tween()
+	tween.tween_property(sprite, "modulate:a", 0.0, 0.5)
+	tween.tween_callback(queue_free)

@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://fish01"]
+
+[node name="Fish" type="Node2D"]
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+centered = true
+scale = Vector2(0.6, 0.6)
+
+[node name="Area2D" type="Area2D" parent="."]
+input_ray_pickable = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+
+[node name="LevelLabel" type="Label" parent="."]
+position = Vector2(0, 35)
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 10
+
+[node name="HungerTimer" type="Timer" parent="."]
+wait_time = 3.0
+autostart = true
+
+[node name="StateTimer" type="Timer" parent="."]
+wait_time = 2.0
+autostart = true
+
+[connection signal="timeout" from="HungerTimer" to="." method="_on_hunger_timeout"]
+[connection signal="timeout" from="StateTimer" to="." method="_on_state_timeout"]

@@ -77,6 +77,7 @@ func _process(delta: float) -> void:
 	if hunger <= 0.0:
 		state = FishState.DEAD
 		modulate = Color(0.5, 0.5, 0.5, 0.3)
+		rotation = PI
 	
 	_update_appearance()
 
@@ -156,7 +157,7 @@ func get_sell_price() -> int:
 
 
 func get_sellable() -> bool:
-	return state != FishState.DEAD
+	return true
 
 
 func feed() -> void:

@@ -257,7 +257,7 @@ func _build_hud(ui: CanvasLayer, view_size: Vector2) -> void:
 	fish_count_label.modulate = Color(1, 1, 1, 0.9)
 	ui.add_child(fish_count_label)
 
-	var update_fish_count := func():
+	var update_fish_count := func(_fish: Node2D):
 		fish_count_label.text = "鱼: %d/%d" % [fish_container.get_child_count(), Global.max_fish]
 
 	Global.fish_added.connect(update_fish_count)

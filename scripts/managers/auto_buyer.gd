@@ -6,21 +6,9 @@ class_name AutoBuyer
 var check_interval: float = 3.0
 var _elapsed: float = 0.0
 
-var sprite: Sprite2D
-
 
 func _ready() -> void:
-	# 创建精灵节点作为视觉外观
-	sprite = Sprite2D.new()
-	sprite.name = "Sprite2D"
-	add_child(sprite)
-	
-	var tex := load("res://assets/ui/ui_coin.svg") as Texture2D
-	if tex:
-		sprite.texture = tex
-	
-	sprite.scale = Vector2(1.0, 1.0)
-	sprite.modulate = Color(1.0, 0.9, 0.3, 0.9)
+	pass
 
 
 func _process(delta: float) -> void:

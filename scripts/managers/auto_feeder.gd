@@ -9,21 +9,9 @@ var _elapsed: float = 0.0
 ## 每次投喂花费
 var feed_cost: int = 10
 
-var sprite: Sprite2D
-
 
 func _ready() -> void:
-	# 创建精灵节点作为视觉外观
-	sprite = Sprite2D.new()
-	sprite.name = "Sprite2D"
-	add_child(sprite)
-	
-	var tex := load("res://assets/food_pellet.svg") as Texture2D
-	if tex:
-		sprite.texture = tex
-	
-	sprite.scale = Vector2(2.0, 2.0)
-	sprite.modulate = Color(0.6, 0.8, 1.0, 0.9)
+	pass
 
 
 func _process(delta: float) -> void:

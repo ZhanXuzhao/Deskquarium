@@ -69,24 +69,8 @@ func _on_window_resized() -> void:
 	for fish in fish_container.get_children():
 		if fish.has_method("set_aquarium_bounds"):
 			fish.set_aquarium_bounds(aquarium_bounds)
-	_reposition_equipment()
 	if aquarium.has_method("_update_water_surface"):
 		aquarium._update_water_surface()
-
-
-func _reposition_equipment() -> void:
-	var equipment_container := $Aquarium.get_node_or_null("EquipmentContainer") as Node2D
-	if not equipment_container:
-		return
-	var view_size := get_viewport_rect().size
-	
-	var feeder := equipment_container.get_node_or_null("AutoFeeder") as AutoFeeder
-	if feeder:
-		feeder.position = Vector2(view_size.x / 2 - 20, view_size.y - 5)
-	
-	var buyer := equipment_container.get_node_or_null("AutoBuyer")
-	if buyer and buyer.get_script() == _AutoBuyerScript:
-		buyer.position = Vector2(view_size.x / 2 + 20, view_size.y - 5)
 
 
 func _setup_background_layer() -> void:
@@ -725,14 +709,6 @@ func _spawn_auto_feeder() -> void:
 	
 	var feeder := AutoFeeder.new()
 	feeder.name = "AutoFeeder"
-	# 放置在鱼缸底部中央
-	var view_size := get_viewport_rect().size
-	var margin := 50.0
-	var top_margin := 80.0
-	var right_margin := 100.0
-	var bottom_margin := 20.0
-	var aquarium_rect := Rect2(margin, top_margin, view_size.x - margin - right_margin, view_size.y - top_margin - bottom_margin)
-	feeder.position = Vector2(aquarium_rect.position.x + aquarium_rect.size.x / 2 - 20, aquarium_rect.position.y + aquarium_rect.size.y - 5)
 	equipment_container.add_child(feeder)
 
 
@@ -748,14 +724,6 @@ func _spawn_auto_buyer() -> void:
 	
 	var buyer := _AutoBuyerScript.new()
 	buyer.name = "AutoBuyer"
-	# 放置在鱼缸底部中央（自动投喂机旁边）
-	var view_size := get_viewport_rect().size
-	var margin := 50.0
-	var top_margin := 80.0
-	var right_margin := 100.0
-	var bottom_margin := 20.0
-	var aquarium_rect := Rect2(margin, top_margin, view_size.x - margin - right_margin, view_size.y - top_margin - bottom_margin)
-	buyer.position = Vector2(aquarium_rect.position.x + aquarium_rect.size.x / 2 + 20, aquarium_rect.position.y + aquarium_rect.size.y - 5)
 	equipment_container.add_child(buyer)
 
 

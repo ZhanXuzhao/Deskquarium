@@ -11,9 +11,10 @@ signal feed_mode_changed(active: bool)
 signal sell_mode_changed(active: bool)
 signal shop_panel_toggled(visible: bool)
 signal decoration_shop_toggled(visible: bool)
+signal fish_info_requested(fish: Node2D)
 signal game_loaded()
 
-var coins: int = 200:
+var coins: int = 5000:
 	set(value):
 		coins = max(value, 0)
 		coins_changed.emit(coins)
@@ -103,7 +104,7 @@ func get_save_data() -> Dictionary:
 
 
 func load_save_data(data: Dictionary) -> void:
-	coins = data.get("coins", 200)
+	coins = data.get("coins", 5000)
 	total_earned = data.get("total_earned", 0)
 	var saved_unlocked = data.get("unlocked_species", [])
 	for i in saved_unlocked.size():
@@ -116,3 +117,17 @@ func load_save_data(data: Dictionary) -> void:
 	max_fish = data.get("max_fish", 6)
 	check_unlocks()
 	game_loaded.emit()
+
+
+func reset_state() -> void:
+	coins = 5000
+	total_earned = 0
+	fish_count = 0
+	max_fish = 6
+	save_dirty = false
+	feed_mode = false
+	sell_mode = false
+	unlocked_species = []
+	unlocked_species.resize(FishData.Species.COUNT)
+	unlocked_species[FishData.Species.GUPPY] = true
+	owned_decorations.clear()

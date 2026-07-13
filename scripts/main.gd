@@ -7,6 +7,9 @@ extends Node2D
 @onready var decoration_container: Node2D = $Aquarium/DecorationContainer
 
 var shop_panel_open: bool = false
+var _selected_fish: Node2D = null
+var _prev_minus: bool = false
+var _prev_equal: bool = false
 
 var aquarium_bounds: Rect2:
 	get:
@@ -18,12 +21,24 @@ var aquarium_bounds: Rect2:
 
 var _fish_shop_list: VBoxContainer
 var _deco_shop_list: VBoxContainer
+var _fish_info_panel: Panel = null
+var _fish_info_name: Label = null
+var _fish_info_name_en: Label = null
+var _fish_info_level: Label = null
+var _fish_info_hunger: Label = null
+var _fish_info_desc: Label = null
+var _fish_info_sell: Label = null
+var _timescale_label: Label = null
+var _game_menu_panel: Panel = null
+var _game_menu_bg: ColorRect = null
+var _menu_open: bool = false
 
 
 func _ready() -> void:
 	Global.fish_added.connect(_on_fish_added)
 	Global.fish_sold.connect(_on_fish_sold)
 	Global.shop_panel_toggled.connect(_on_shop_toggled)
+	Global.fish_info_requested.connect(_on_fish_info_requested)
 
 	get_window().size_changed.connect(_on_window_resized)
 
@@ -37,6 +52,7 @@ func _ready() -> void:
 func _on_window_resized() -> void:
 	_setup_aquarium()
 	_update_ui_positions()
+	_update_fish_info_panel_position()
 	for fish in fish_container.get_children():
 		if fish.has_method("set_aquarium_bounds"):
 			fish.set_aquarium_bounds(aquarium_bounds)
@@ -95,10 +111,25 @@ func _process(_delta: float) -> void:
 
 func _handle_input() -> void:
 	if Input.is_action_just_pressed("ui_cancel"):
-		if shop_panel_open:
+		if _menu_open:
+			_toggle_game_menu()
+		elif shop_panel_open:
 			toggle_shop()
+		elif _selected_fish != null:
+			_hide_fish_info()
 		elif Global.sell_mode:
 			Global.sell_mode = false
+
+	var minus_pressed := Input.is_key_pressed(KEY_MINUS)
+	var equal_pressed := Input.is_key_pressed(KEY_EQUAL)
+	if minus_pressed and not _prev_minus:
+		Engine.time_scale = max(0.1, Engine.time_scale - 0.5)
+		_timescale_changed()
+	if equal_pressed and not _prev_equal:
+		Engine.time_scale = min(5.0, Engine.time_scale + 0.5)
+		_timescale_changed()
+	_prev_minus = minus_pressed
+	_prev_equal = equal_pressed
 
 
 func _setup_ui() -> void:
@@ -111,6 +142,9 @@ func _setup_ui() -> void:
 	_build_hud(ui, view_size)
 	_build_shop_panel(ui, view_size)
 	_build_bottom_bar(ui, view_size)
+	_build_fish_info_panel(ui, view_size)
+	_build_game_menu(ui, view_size)
+	_build_timescale_label(ui, view_size)
 
 
 func _update_ui_positions() -> void:
@@ -164,6 +198,24 @@ func _update_ui_positions() -> void:
 	if shop_panel:
 		shop_panel.position = Vector2(view_size.x / 2 - 250, view_size.y / 2 - 210)
 
+	_update_fish_info_panel_position()
+
+	# Menu button
+	var menu_btn := ui.get_node_or_null("MenuBtn") as Button
+	if menu_btn:
+		menu_btn.position = Vector2(view_size.x - 60, 12)
+
+	# Game menu
+	if _game_menu_bg:
+		_game_menu_bg.size = view_size
+		_game_menu_bg.position = Vector2.ZERO
+	if _game_menu_panel:
+		_game_menu_panel.position = Vector2(view_size.x / 2 - 110, view_size.y / 2 - 60)
+
+	# Timescale label
+	if _timescale_label:
+		_timescale_label.position = Vector2(view_size.x - 120, view_size.y - 35)
+
 
 func _build_hud(ui: CanvasLayer, view_size: Vector2) -> void:
 	var bg := ColorRect.new()
@@ -211,6 +263,16 @@ func _build_hud(ui: CanvasLayer, view_size: Vector2) -> void:
 	Global.fish_added.connect(update_fish_count)
 	Global.fish_sold.connect(update_fish_count)
 	Global.game_loaded.connect(update_fish_count)
+
+	# Menu button
+	var menu_btn := Button.new()
+	menu_btn.name = "MenuBtn"
+	menu_btn.text = "菜单"
+	menu_btn.position = Vector2(view_size.x - 60, 12)
+	menu_btn.size = Vector2(50, 26)
+	menu_btn.add_theme_font_size_override("font_size", 12)
+	ui.add_child(menu_btn)
+	menu_btn.pressed.connect(_toggle_game_menu)
 
 
 func _build_shop_panel(ui: CanvasLayer, view_size: Vector2) -> void:
@@ -484,3 +546,177 @@ func do_upgrade() -> void:
 func _on_shop_toggled(visible: bool) -> void:
 	if visible:
 		toggle_shop()
+
+
+# ── Fish Info Panel ──────────────────────────────────────────────────────
+
+func _build_fish_info_panel(ui: CanvasLayer, view_size: Vector2) -> void:
+	_fish_info_panel = Panel.new()
+	_fish_info_panel.name = "FishInfoPanel"
+	_fish_info_panel.size = Vector2(220, 140)
+	_fish_info_panel.visible = false
+	ui.add_child(_fish_info_panel)
+
+	var margin := 8
+	var line_h := 20
+
+	_fish_info_name = Label.new()
+	_fish_info_name.name = "FishInfoName"
+	_fish_info_name.position = Vector2(margin, margin)
+	_fish_info_name.add_theme_font_size_override("font_size", 16)
+	_fish_info_panel.add_child(_fish_info_name)
+
+	_fish_info_name_en = Label.new()
+	_fish_info_name_en.name = "FishInfoNameEn"
+	_fish_info_name_en.position = Vector2(margin + 2, margin + line_h)
+	_fish_info_name_en.add_theme_font_size_override("font_size", 10)
+	_fish_info_name_en.modulate = Color(1, 1, 1, 0.6)
+	_fish_info_panel.add_child(_fish_info_name_en)
+
+	_fish_info_level = Label.new()
+	_fish_info_level.name = "FishInfoLevel"
+	_fish_info_level.position = Vector2(margin, margin + line_h * 2 + 2)
+	_fish_info_level.add_theme_font_size_override("font_size", 13)
+	_fish_info_panel.add_child(_fish_info_level)
+
+	_fish_info_hunger = Label.new()
+	_fish_info_hunger.name = "FishInfoHunger"
+	_fish_info_hunger.position = Vector2(margin, margin + line_h * 3 + 2)
+	_fish_info_hunger.add_theme_font_size_override("font_size", 12)
+	_fish_info_panel.add_child(_fish_info_hunger)
+
+	_fish_info_desc = Label.new()
+	_fish_info_desc.name = "FishInfoDesc"
+	_fish_info_desc.position = Vector2(margin, margin + line_h * 4 + 2)
+	_fish_info_desc.add_theme_font_size_override("font_size", 10)
+	_fish_info_desc.modulate = Color(1, 1, 1, 0.7)
+	_fish_info_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_fish_info_desc.size = Vector2(204, 30)
+	_fish_info_panel.add_child(_fish_info_desc)
+
+	_fish_info_sell = Label.new()
+	_fish_info_sell.name = "FishInfoSell"
+	_fish_info_sell.position = Vector2(margin, margin + line_h * 6 + 2)
+	_fish_info_sell.add_theme_font_size_override("font_size", 11)
+	_fish_info_sell.modulate = Color(1, 0.8, 0.4, 0.9)
+	_fish_info_panel.add_child(_fish_info_sell)
+
+	_update_fish_info_panel_position()
+
+
+func _update_fish_info_panel_position() -> void:
+	if _fish_info_panel == null:
+		return
+	var view_size := get_viewport_rect().size
+	_fish_info_panel.position = Vector2(10, view_size.y - 70 - _fish_info_panel.size.y - 8)
+
+
+func _on_fish_info_requested(fish: Node2D) -> void:
+	if not is_instance_valid(fish):
+		return
+	_selected_fish = fish
+	_refresh_fish_info_panel()
+	_fish_info_panel.visible = true
+
+
+func _refresh_fish_info_panel() -> void:
+	if _selected_fish == null or not is_instance_valid(_selected_fish):
+		return
+	var f := _selected_fish
+	var species: int = f.species
+	var lv: int = f.get_level()
+	var hunger_pct: int = int(f.hunger * 100)
+	_fish_info_name.text = FishData.get_species_name(species)
+	_fish_info_name_en.text = FishData.get_species_name_en(species)
+	_fish_info_level.text = "等级: %d / %d" % [lv, FishData.get_max_level(species)]
+	_fish_info_hunger.text = "饱食度: %d%%" % hunger_pct
+	_fish_info_desc.text = FishData.get_description(species)
+	if f.get_sellable():
+		_fish_info_sell.text = "售价: ¥%d" % f.get_sell_price()
+	else:
+		_fish_info_sell.text = "状态: 死亡"
+
+
+func _hide_fish_info() -> void:
+	_selected_fish = null
+	if _fish_info_panel:
+		_fish_info_panel.visible = false
+
+
+# ── Game Menu ───────────────────────────────────────────────────────────
+
+func _build_game_menu(ui: CanvasLayer, view_size: Vector2) -> void:
+	_game_menu_bg = ColorRect.new()
+	_game_menu_bg.name = "GameMenuBg"
+	_game_menu_bg.color = Color(0, 0, 0, 0.4)
+	_game_menu_bg.size = view_size
+	_game_menu_bg.position = Vector2.ZERO
+	_game_menu_bg.visible = false
+	_game_menu_bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	ui.add_child(_game_menu_bg)
+	# Clicking bg closes menu
+	_game_menu_bg.gui_input.connect(_on_menu_bg_input)
+
+	_game_menu_panel = Panel.new()
+	_game_menu_panel.name = "GameMenuPanel"
+	_game_menu_panel.size = Vector2(220, 120)
+	_game_menu_panel.position = Vector2(view_size.x / 2 - 110, view_size.y / 2 - 60)
+	_game_menu_panel.visible = false
+	ui.add_child(_game_menu_panel)
+
+	var title := Label.new()
+	title.text = "游戏菜单"
+	title.position = Vector2(12, 12)
+	title.add_theme_font_size_override("font_size", 18)
+	_game_menu_panel.add_child(title)
+
+	var restart_btn := Button.new()
+	restart_btn.text = "重新开始游戏"
+	restart_btn.position = Vector2(20, 45)
+	restart_btn.size = Vector2(180, 30)
+	_game_menu_panel.add_child(restart_btn)
+	restart_btn.pressed.connect(_on_restart_pressed)
+
+	var cancel_btn := Button.new()
+	cancel_btn.text = "取消"
+	cancel_btn.position = Vector2(20, 82)
+	cancel_btn.size = Vector2(180, 30)
+	_game_menu_panel.add_child(cancel_btn)
+	cancel_btn.pressed.connect(_toggle_game_menu)
+
+
+func _toggle_game_menu() -> void:
+	_menu_open = not _menu_open
+	_game_menu_bg.visible = _menu_open
+	_game_menu_panel.visible = _menu_open
+
+
+func _on_menu_bg_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_toggle_game_menu()
+
+
+func _on_restart_pressed() -> void:
+	_toggle_game_menu()
+	SaveManager.reset_save()
+
+
+# ── Timescale ────────────────────────────────────────────────────────────
+
+func _build_timescale_label(ui: CanvasLayer, view_size: Vector2) -> void:
+	_timescale_label = Label.new()
+	_timescale_label.name = "TimescaleLabel"
+	_timescale_label.text = "x%.1f" % Engine.time_scale
+	_timescale_label.position = Vector2(view_size.x - 120, view_size.y - 35)
+	_timescale_label.add_theme_font_size_override("font_size", 14)
+	_timescale_label.modulate = Color(1, 1, 1, 0.5)
+	ui.add_child(_timescale_label)
+
+
+func _timescale_changed() -> void:
+	if _timescale_label:
+		_timescale_label.text = "x%.1f" % Engine.time_scale
+		# Brief flash effect
+		_timescale_label.modulate = Color(1, 1, 1, 1.0)
+		var tween := create_tween()
+		tween.tween_property(_timescale_label, "modulate", Color(1, 1, 1, 0.5), 1.0)

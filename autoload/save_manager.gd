@@ -34,4 +34,5 @@ func load_game() -> bool:
 func reset_save() -> void:
 	if FileAccess.file_exists(SAVE_PATH):
 		DirAccess.remove_absolute(SAVE_PATH)
+	Global.reset_state()
 	get_tree().reload_current_scene()

@@ -15,6 +15,11 @@ enum FishState {
 			_update_appearance()
 
 var level: float = 0.0
+var auto_sell: bool = false:
+	set(value):
+		auto_sell = value
+		if auto_sell and get_level() >= FishData.get_max_level(species):
+			_auto_sell()
 var hunger: float = 1.0:
 	set(value):
 		hunger = clampf(value, 0.0, 1.0)
@@ -139,6 +144,7 @@ func _eat_food(food: Node2D) -> void:
 	# Growth only happens when satiety >= 50%
 	if hunger >= 0.5:
 		level = min(1.0, level + FishData.get_growth_rate(species))
+		_check_auto_sell()
 	
 	if food.has_method("consume"):
 		food.consume()
@@ -179,6 +185,7 @@ func feed() -> void:
 	# Growth only happens when satiety >= 50%
 	if hunger >= 0.5:
 		level = min(1.0, level + FishData.get_growth_rate(species) * 0.5)
+		_check_auto_sell()
 
 
 func set_food_target(food: Node2D) -> void:
@@ -215,6 +222,20 @@ func sell() -> void:
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, 0.3)
 	tween.tween_callback(queue_free)
+
+
+func _check_auto_sell() -> void:
+	if auto_sell and get_level() >= FishData.get_max_level(species):
+		_auto_sell()
+
+
+func _auto_sell() -> void:
+	if not is_inside_tree():
+		return
+	# Brief flash effect before selling
+	var tween := create_tween()
+	tween.tween_property(self, "modulate", Color(1, 1, 0, 1), 0.2)
+	tween.tween_callback(sell)
 
 
 func _sell_fish() -> void:

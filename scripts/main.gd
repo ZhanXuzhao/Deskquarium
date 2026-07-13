@@ -98,6 +98,7 @@ func _restore_fish_from_save() -> void:
 		var fish := _spawn_fish(species)
 		fish.level = fd.get("level", 0.0)
 		fish.hunger = fd.get("hunger", 1.0)
+		fish.auto_sell = fd.get("auto_sell", false)
 		fish.position = Vector2(fd.get("x", 0.0), fd.get("y", 0.0))
 
 
@@ -669,12 +670,19 @@ func _build_fish_info_panel(ui: CanvasLayer, view_size: Vector2) -> void:
 	_fish_info_desc.size = Vector2(264, 30)
 	_fish_info_panel.add_child(_fish_info_desc)
 
-	# Bottom row: sell price label + sell button
+	# Bottom row: auto-sell checkbox + sell price label + sell button
 	var sell_hbox := HBoxContainer.new()
 	sell_hbox.position = Vector2(margin, margin + line_h * 6 + 4)
 	sell_hbox.size = Vector2(264, 24)
-	sell_hbox.add_theme_constant_override("separation", 8)
+	sell_hbox.add_theme_constant_override("separation", 4)
 	_fish_info_panel.add_child(sell_hbox)
+
+	var auto_sell_cb := CheckBox.new()
+	auto_sell_cb.name = "FishInfoAutoSell"
+	auto_sell_cb.text = "满级自售"
+	auto_sell_cb.add_theme_font_size_override("font_size", 10)
+	auto_sell_cb.toggled.connect(_on_auto_sell_toggled)
+	sell_hbox.add_child(auto_sell_cb)
 
 	_fish_info_sell = Label.new()
 	_fish_info_sell.name = "FishInfoSell"
@@ -729,6 +737,12 @@ func _refresh_fish_info_panel() -> void:
 	_fish_info_hunger.text = "饱食度: %d%%" % hunger_pct
 	_fish_info_desc.text = FishData.get_description(species)
 
+	# Update auto-sell checkbox
+	var auto_sell_cb := _fish_info_panel.get_node_or_null("FishInfoAutoSell") as CheckBox
+	if auto_sell_cb:
+		auto_sell_cb.set_pressed_no_signal(f.auto_sell)
+		auto_sell_cb.visible = f.get_sellable()
+
 	# Update sell info
 	if f.get_sellable():
 		_fish_info_sell.text = "售价: ¥%d" % f.get_sell_price()
@@ -756,6 +770,13 @@ func _on_fish_info_prev() -> void:
 
 func _on_fish_info_next() -> void:
 	_navigate_fish(1)
+
+
+func _on_auto_sell_toggled(button_pressed: bool) -> void:
+	if _selected_fish == null or not is_instance_valid(_selected_fish):
+		return
+	_selected_fish.auto_sell = button_pressed
+	Global.save_dirty = true
 
 
 func _sell_selected_fish() -> void:

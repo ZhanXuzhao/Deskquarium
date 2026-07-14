@@ -1,0 +1,62 @@
+[gd_scene format=3 uid="uid://dc3r4jv6o5a7x"]
+
+[ext_resource type="Script" uid="uid://dof6poxyq24c2" path="res://scenes/ui/fish_card/fish_card.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://b63ow3bbexjti" path="res://assets/fish/fish_guppy.png" id="2_5pxlb"]
+
+[node name="FishCard" type="Panel"]
+custom_minimum_size = Vector2(150, 150)
+size_flags_horizontal = 4
+script = ExtResource("1")
+
+[node name="PreviewCenter" type="CenterContainer" parent="."]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+
+[node name="VBox" type="VBoxContainer" parent="PreviewCenter"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 2
+
+[node name="Preview" type="TextureRect" parent="PreviewCenter/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("2_5pxlb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NameLabel" type="Label" parent="PreviewCenter/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 11
+text = "fish_name"
+horizontal_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PreviewCenter/VBox"]
+layout_mode = 2
+
+[node name="PriceLabel" type="Label" parent="PreviewCenter/VBox/HBoxContainer"]
+unique_name_in_owner = true
+modulate = Color(1, 0.85, 0, 1)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+text = "1000"
+horizontal_alignment = 1
+
+[node name="BuyButton" type="Button" parent="PreviewCenter/VBox/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+text = "购买"

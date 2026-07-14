@@ -29,7 +29,7 @@ var aquarium_bounds: Rect2:
 		var visible_top := maxf(0.0, Global.DESIGN_HEIGHT - visible_height)
 		return Rect2(0, visible_top, Global.DESIGN_WIDTH, Global.DESIGN_HEIGHT - visible_top)
 
-var _fish_shop_list: VBoxContainer
+var _fish_shop_list: GridContainer
 var _deco_shop_list: GridContainer
 var _equip_shop_list: VBoxContainer
 var _fish_info_panel: Panel = null
@@ -572,7 +572,7 @@ func _build_shop_panel(parent: Node, view_size: Vector2) -> void:
 	var fish_scroll := ScrollContainer.new()
 	fish_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fish_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_fish_shop_list = VBoxContainer.new()
+	_fish_shop_list = GridContainer.new()
 	_fish_shop_list.name = "FishList"
 	_fish_shop_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	fish_scroll.add_child(_fish_shop_list)
@@ -1059,6 +1059,15 @@ func toggle_shop() -> void:
 		_refresh_shop_ui()
 
 
+func _update_fish_columns() -> void:
+	if _fish_shop_list == null:
+		return
+	var available := _fish_shop_list.size.x
+	if available <= 0:
+		available = 960.0
+	_fish_shop_list.columns = maxi(1, int(available / 160))
+
+
 func _update_decoration_columns() -> void:
 	if _deco_shop_list == null:
 		return
@@ -1087,6 +1096,7 @@ func _refresh_shop_ui() -> void:
 			continue
 		_add_fish_shop_entry(_fish_shop_list, species)
 
+	_update_fish_columns()
 	_update_decoration_columns()
 
 	for deco_type in DecorationData.DecorationType.values() as Array[int]:
@@ -1098,41 +1108,13 @@ func _refresh_shop_ui() -> void:
 		_add_equip_shop_entry(_equip_shop_list, eq_type)
 
 
-func _add_fish_shop_entry(parent: VBoxContainer, species: int) -> void:
-	var panel := Panel.new()
-	panel.custom_minimum_size = Vector2(0, 55)
-
-	var hbox := HBoxContainer.new()
-	hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hbox.add_theme_constant_override("separation", 8)
-
-	var name_label := Label.new()
-	name_label.text = FishData.get_species_name(species)
-	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_label.add_theme_font_size_override("font_size", 14)
-
-	var is_unlocked := Global.unlocked_species[species]
-	var info_label := Label.new()
-	var buy_btn := Button.new()
-
-	if is_unlocked:
-		var cost: int = FishData.get_buy_cost(species)
-		info_label.text = "¥%d" % cost
-		buy_btn.text = "购买"
-		buy_btn.disabled = Global.coins < cost or not Global.can_add_fish()
-		var s: int = species
-		buy_btn.pressed.connect(func(): _buy_fish(s))
-	else:
-		var req: Dictionary = FishData.get_unlock_requirement(species)
-		info_label.text = "累计¥%d解锁" % req.value
-		buy_btn.text = "???"
-		buy_btn.disabled = true
-
-	hbox.add_child(name_label)
-	hbox.add_child(info_label)
-	hbox.add_child(buy_btn)
-	panel.add_child(hbox)
-	parent.add_child(panel)
+func _add_fish_shop_entry(parent: GridContainer, species: int) -> void:
+	var card_scene := preload("res://scenes/ui/fish_card/fish_card.tscn")
+	var card := card_scene.instantiate() as FishCard
+	parent.add_child(card)
+	card.setup(species)
+	var s: int = species
+	card.buy_pressed.connect(func(_type: int): _buy_fish(s))
 
 
 func _add_deco_shop_entry(parent: GridContainer, deco_type: int) -> void:

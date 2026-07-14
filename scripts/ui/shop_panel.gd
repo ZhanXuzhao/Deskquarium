@@ -2,7 +2,7 @@ extends Control
 
 class_name ShopPanel
 
-@onready var fish_list: VBoxContainer = %FishList
+@onready var fish_list: GridContainer = %FishList
 @onready var decoration_list: GridContainer = %DecorationList
 @onready var tab_container: TabContainer = %TabContainer
 
@@ -21,6 +21,8 @@ func _populate_fish_shop() -> void:
 	for c in fish_list.get_children():
 		c.queue_free()
 	
+	_update_fish_columns()
+	
 	for species in FishData.Species.values() as Array[int]:
 		if species == FishData.Species.COUNT:
 			continue
@@ -28,43 +30,19 @@ func _populate_fish_shop() -> void:
 		_add_fish_entry(species)
 
 
+func _update_fish_columns() -> void:
+	var available := fish_list.size.x
+	if available <= 0:
+		available = 960.0
+	fish_list.columns = maxi(1, int(available / 160))
+
+
 func _add_fish_entry(species: int) -> void:
-	var panel := Panel.new()
-	panel.custom_minimum_size = Vector2(0, 60)
-	
-	var hbox := HBoxContainer.new()
-	hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	
-	var name_label := Label.new()
-	name_label.text = FishData.get_species_name(species)
-	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	
-	var info_label := Label.new()
-	var is_unlocked := Global.unlocked_species[species]
-	if is_unlocked:
-		var cost: int = FishData.get_buy_cost(species)
-		info_label.text = "¥%d" % cost
-	else:
-		var req: Dictionary = FishData.get_unlock_requirement(species)
-		info_label.text = "累计¥%d解锁" % req.value
-	info_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	info_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	
-	var buy_btn := Button.new()
-	if is_unlocked:
-		buy_btn.text = "购买"
-		buy_btn.pressed.connect(_on_buy_fish.bind(species))
-		if Global.coins < FishData.get_buy_cost(species) or not Global.can_add_fish():
-			buy_btn.disabled = true
-	else:
-		buy_btn.text = "锁定"
-		buy_btn.disabled = true
-	
-	hbox.add_child(name_label)
-	hbox.add_child(info_label)
-	hbox.add_child(buy_btn)
-	panel.add_child(hbox)
-	fish_list.add_child(panel)
+	var card_scene := preload("res://scenes/ui/fish_card/fish_card.tscn")
+	var card := card_scene.instantiate() as FishCard
+	fish_list.add_child(card)
+	card.setup(species)
+	card.buy_pressed.connect(_on_buy_fish)
 
 
 func _populate_decoration_shop() -> void:

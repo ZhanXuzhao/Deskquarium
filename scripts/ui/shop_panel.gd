@@ -78,62 +78,11 @@ func _populate_decoration_shop() -> void:
 
 
 func _add_decoration_entry(deco_type: int) -> void:
-	var card := Panel.new()
-	card.custom_minimum_size = Vector2(180, 150)
-	card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-
-	var vbox := VBoxContainer.new()
-	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	vbox.add_theme_constant_override("separation", 2)
-
-	# 装饰图片预览（固定 64×64，用 CenterContainer 约束）
-	var tex_path := DecorationData.get_texture_path(deco_type)
-	var tex := load(tex_path) as Texture2D if ResourceLoader.exists(tex_path) else null
-
-	var center := CenterContainer.new()
-	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	center.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	center.custom_minimum_size = Vector2(0, 64)
-
-	var preview := TextureRect.new()
-	if tex:
-		preview.texture = tex
-		preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	else:
-		preview.modulate = Color(0.3, 0.3, 0.3, 1)
-	preview.custom_minimum_size = Vector2(64, 64)
-	center.add_child(preview)
-	vbox.add_child(center)
-
-	# 名称
-	var name_label := Label.new()
-	name_label.text = DecorationData.get_display_name(deco_type)
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_label.add_theme_font_size_override("font_size", 11)
-	vbox.add_child(name_label)
-
-	# 价格
-	var cost: int = DecorationData.get_cost(deco_type)
-	var cost_label := Label.new()
-	cost_label.text = "¥%d" % cost
-	cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	cost_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	cost_label.add_theme_font_size_override("font_size", 12)
-	cost_label.modulate = Color(1, 0.85, 0, 1)
-	vbox.add_child(cost_label)
-
-	# 购买按钮
-	var buy_btn := Button.new()
-	buy_btn.text = "购买"
-	buy_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	buy_btn.disabled = Global.coins < cost
-	buy_btn.pressed.connect(_on_buy_decoration.bind(deco_type))
-	vbox.add_child(buy_btn)
-
-	card.add_child(vbox)
+	var card_scene := preload("res://scenes/ui/decoration_card/decoration_card.tscn")
+	var card := card_scene.instantiate() as DecorationCard
 	decoration_list.add_child(card)
+	card.setup(deco_type)
+	card.buy_pressed.connect(_on_buy_decoration)
 
 
 func _on_buy_fish(species: int) -> void:

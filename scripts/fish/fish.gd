@@ -26,7 +26,6 @@ var direction: float = 1.0
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var area: Area2D = $Area2D
-@onready var level_label: Label = $LevelLabel
 @onready var hunger_timer: Timer = $HungerTimer
 @onready var state_timer: Timer = $StateTimer
 @onready var collision_shape: CollisionShape2D = $Area2D/CollisionShape2D
@@ -64,8 +63,7 @@ func _update_appearance() -> void:
 	sprite.scale = Vector2(scale_factor, scale_factor) * 0.6
 	sprite.flip_h = direction < 0
 	
-	level_label.text = "Lv.%d" % [get_level()]
-	level_label.modulate = Color(1, 1, 1, 0.8)
+
 
 
 func _process(delta: float) -> void:

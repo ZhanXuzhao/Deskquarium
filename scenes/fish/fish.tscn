@@ -11,11 +11,6 @@ input_ray_pickable = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
 
-[node name="LevelLabel" type="Label" parent="."]
-position = Vector2(0, 35)
-horizontal_alignment = 1
-theme_override_font_sizes/font_size = 10
-
 [node name="HungerTimer" type="Timer" parent="."]
 wait_time = 3.0
 autostart = true

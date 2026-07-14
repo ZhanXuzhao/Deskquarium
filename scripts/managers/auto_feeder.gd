@@ -37,6 +37,17 @@ func _try_auto_feed() -> void:
 	if not food_container:
 		return
 	
+	# 至少有一条鱼饱食度低于 50% 时才投喂
+	var fish_container := aquarium.get_node_or_null("FishContainer") as Node2D
+	if fish_container:
+		var any_hungry := false
+		for fish in fish_container.get_children():
+			if fish.has_method("get_hunger") and fish.hunger < 0.5:
+				any_hungry = true
+				break
+		if not any_hungry:
+			return
+	
 	# 如果鱼缸中没有鱼食，则自动投喂
 	if food_container.get_child_count() == 0:
 		_do_auto_feed(food_container)

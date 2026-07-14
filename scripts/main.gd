@@ -23,9 +23,9 @@ var aquarium_bounds: Rect2:
 		var view_size := get_viewport_rect().size
 		if view_size == Vector2.ZERO:
 			return Rect2(0, 0, Global.DESIGN_WIDTH, Global.DESIGN_HEIGHT)
-		var scale := view_size.x / Global.DESIGN_WIDTH
+		var s: float = view_size.x / Global.DESIGN_WIDTH
 		# 根据窗口实际可见区域计算设计坐标中的鱼缸边界（底部对齐）
-		var visible_height := view_size.y / scale
+		var visible_height: float = view_size.y / s
 		var visible_top := maxf(0.0, Global.DESIGN_HEIGHT - visible_height)
 		return Rect2(0, visible_top, Global.DESIGN_WIDTH, Global.DESIGN_HEIGHT - visible_top)
 
@@ -150,12 +150,12 @@ func _update_background_size() -> void:
 func _update_aquarium_scale() -> void:
 	"""根据窗口宽度缩放 Aquarium，并底部对齐"""
 	var view_size := get_viewport_rect().size
-	var scale := view_size.x / Global.DESIGN_WIDTH
-	Global.scale_factor = scale
+	var s: float = view_size.x / Global.DESIGN_WIDTH
+	Global.scale_factor = s
 	
-	aquarium.scale = Vector2(scale, scale)
+	aquarium.scale = Vector2(s, s)
 	# 底部对齐：Aquarium 底部边缘 = 视口底部
-	aquarium.position = Vector2(0, view_size.y - Global.DESIGN_HEIGHT * scale)
+	aquarium.position = Vector2(0, view_size.y - Global.DESIGN_HEIGHT * s)
 	
 	# 更新所有鱼的边界
 	for fish in fish_container.get_children():
@@ -723,8 +723,8 @@ func _enter_tiny_mode() -> void:
 	else:
 		DisplayServer.window_set_size(Vector2i(TINY_WIDTH, TINY_HEIGHT))
 		# 居中
-		var screen_center := DisplayServer.screen_get_size() / 2
-		DisplayServer.window_set_position(Vector2i(screen_center.x - TINY_WIDTH / 2, screen_center.y - TINY_HEIGHT / 2))
+		var screen_center := DisplayServer.screen_get_size() / 2.0
+		DisplayServer.window_set_position(Vector2i(screen_center.x - TINY_WIDTH / 2.0, screen_center.y - TINY_HEIGHT / 2.0))
 	
 	_hide_all_ui()
 	
@@ -1199,11 +1199,11 @@ func _confirm_placement() -> void:
 		return
 	
 	var pos := _placement_preview.position
-	var scale := _placement_preview.scale
+	var preview_scale := _placement_preview.scale
 	# 新装饰默认层级为 10
 	var new_z := 10
-	_place_decoration(_placement_deco_type, pos, scale, new_z)
-	Global.owned_decorations.append({"type": _placement_deco_type, "x": pos.x, "y": pos.y, "scale_x": scale.x, "scale_y": scale.y, "z_index": new_z})
+	_place_decoration(_placement_deco_type, pos, preview_scale, new_z)
+	Global.owned_decorations.append({"type": _placement_deco_type, "x": pos.x, "y": pos.y, "scale_x": preview_scale.x, "scale_y": preview_scale.y, "z_index": new_z})
 	Global.decoration_placed.emit(_placement_deco_type, pos)
 	Global.save_dirty = true
 	_exit_placement_mode()
@@ -1226,9 +1226,9 @@ func _exit_placement_mode() -> void:
 		_placement_preview = null
 
 
-func _place_decoration(deco_type: int, pos: Vector2, initial_scale: Vector2 = Vector2(0.5, 0.5), z_index: int = 0) -> void:
+func _place_decoration(deco_type: int, pos: Vector2, initial_scale: Vector2 = Vector2(0.5, 0.5), z_idx: int = 0) -> void:
 	"""在指定位置生成装饰物精灵"""
-	var deco := Global.make_decoration_sprite(deco_type, initial_scale, z_index)
+	var deco: Sprite2D = Global.make_decoration_sprite(deco_type, initial_scale, z_idx)
 	if deco == null:
 		return
 	deco.position = pos
@@ -1312,16 +1312,17 @@ func _restore_decorations_from_save() -> void:
 	
 	for d in Global.owned_decorations:
 		if typeof(d) == TYPE_DICTIONARY:
-			var deco_type: int = d.get("type", 0)
-			var pos := Vector2(d.get("x", 0), d.get("y", 0))
-			var scale := Vector2(d.get("scale_x", 0.5), d.get("scale_y", 0.5))
-			var z_idx: int = d.get("z_index", 0)
+			var dict: Dictionary = d
+			var deco_type: int = dict.get("type", 0)
+			var pos := Vector2(dict.get("x", 0), dict.get("y", 0))
+			var deco_scale := Vector2(dict.get("scale_x", 0.5), dict.get("scale_y", 0.5))
+			var z_idx: int = dict.get("z_index", 0)
 			# 如果位置为 (0,0) 且是旧格式迁移来的，随机放置
-			if pos == Vector2.ZERO and d.get("x", 0) == 0 and d.get("y", 0) == 0:
+			if pos == Vector2.ZERO and dict.get("x", 0) == 0 and dict.get("y", 0) == 0:
 				var margin := 100.0
 				pos.x = randf_range(margin, aquarium_bounds.size.x - margin)
 				pos.y = randf_range(aquarium_bounds.size.y * 0.4, aquarium_bounds.size.y - 20.0)
-			_place_decoration(deco_type, pos, scale, z_idx)
+			_place_decoration(deco_type, pos, deco_scale, z_idx)
 		else:
 			# 旧格式：只有类型 int
 			var deco_type: int = d

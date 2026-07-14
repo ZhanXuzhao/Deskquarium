@@ -21,13 +21,14 @@ var scale_factor: float = 1.0
 
 
 # 创建一个可点击的装饰物精灵（带点击区域和元数据）
-static func make_decoration_sprite(deco_type: int, initial_scale: Vector2 = Vector2(0.5, 0.5)) -> Sprite2D:
+static func make_decoration_sprite(deco_type: int, initial_scale: Vector2 = Vector2(0.5, 0.5), z_index: int = 0) -> Sprite2D:
 	var tex_path := DecorationData.get_texture_path(deco_type)
 	if not ResourceLoader.exists(tex_path):
 		return null
 	var deco := Sprite2D.new()
 	deco.texture = load(tex_path)
 	deco.scale = initial_scale
+	deco.z_index = z_index
 	deco.set_meta(&"deco_type", deco_type)
 	
 	# 添加点击区域
@@ -66,7 +67,7 @@ func _find_decoration_index(sprite: Sprite2D) -> int:
 
 
 # 更新指定装饰物的位置/缩放数据（拖拽/拉伸结束后调用）
-func update_decoration_instance(deco_type: int, pos: Vector2, scale: Vector2) -> void:
+func update_decoration_instance(deco_type: int, pos: Vector2, scale: Vector2, z_index: int = -1) -> void:
 	# 尝试按位置查找已有数据并更新
 	for i in owned_decorations.size():
 		var d = owned_decorations[i]
@@ -76,6 +77,8 @@ func update_decoration_instance(deco_type: int, pos: Vector2, scale: Vector2) ->
 				d["y"] = pos.y
 				d["scale_x"] = scale.x
 				d["scale_y"] = scale.y
+				if z_index >= 0:
+					d["z_index"] = z_index
 				return
 	# 没找到精确匹配 → 更新最后放置的同类型装饰
 	for i in range(owned_decorations.size() - 1, -1, -1):
@@ -85,6 +88,8 @@ func update_decoration_instance(deco_type: int, pos: Vector2, scale: Vector2) ->
 			d["y"] = pos.y
 			d["scale_x"] = scale.x
 			d["scale_y"] = scale.y
+			if z_index >= 0:
+				d["z_index"] = z_index
 			return
 
 
@@ -321,10 +326,12 @@ func load_save_data(data: Dictionary) -> void:
 	owned_decorations.clear()
 	for d in deco_data:
 		if typeof(d) == TYPE_DICTIONARY:
+			if not d.has("z_index"):
+				d["z_index"] = 0
 			owned_decorations.append(d.duplicate())
 		else:
 			# 旧格式：只有类型 int，补默认位置/缩放
-			owned_decorations.append({"type": d, "x": 0, "y": 0, "scale_x": 0.5, "scale_y": 0.5})
+			owned_decorations.append({"type": d, "x": 0, "y": 0, "scale_x": 0.5, "scale_y": 0.5, "z_index": 0})
 	has_auto_feeder = data.get("has_auto_feeder", false)
 	auto_feeder_enabled = data.get("auto_feeder_enabled", true)
 	auto_feeder_feed_count = data.get("auto_feeder_feed_count", 3)

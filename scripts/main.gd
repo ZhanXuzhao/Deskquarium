@@ -707,8 +707,14 @@ func _confirm_placement() -> void:
 	
 	var pos := _placement_preview.position
 	var scale := _placement_preview.scale
-	_place_decoration(_placement_deco_type, pos, scale)
-	Global.owned_decorations.append({"type": _placement_deco_type, "x": pos.x, "y": pos.y, "scale_x": scale.x, "scale_y": scale.y})
+	# 新装饰默认放在最上层（当前最大 z_index + 1）
+	var max_z := 0
+	for child in decoration_container.get_children():
+		if child is Sprite2D and child.name != "PlacementPreview" and child.z_index > max_z:
+			max_z = child.z_index
+	var new_z := max_z + 1
+	_place_decoration(_placement_deco_type, pos, scale, new_z)
+	Global.owned_decorations.append({"type": _placement_deco_type, "x": pos.x, "y": pos.y, "scale_x": scale.x, "scale_y": scale.y, "z_index": new_z})
 	Global.decoration_placed.emit(_placement_deco_type, pos)
 	Global.save_dirty = true
 	_exit_placement_mode()
@@ -731,9 +737,9 @@ func _exit_placement_mode() -> void:
 		_placement_preview = null
 
 
-func _place_decoration(deco_type: int, pos: Vector2, initial_scale: Vector2 = Vector2(0.5, 0.5)) -> void:
+func _place_decoration(deco_type: int, pos: Vector2, initial_scale: Vector2 = Vector2(0.5, 0.5), z_index: int = 0) -> void:
 	"""在指定位置生成装饰物精灵"""
-	var deco := Global.make_decoration_sprite(deco_type, initial_scale)
+	var deco := Global.make_decoration_sprite(deco_type, initial_scale, z_index)
 	if deco == null:
 		return
 	deco.position = pos
@@ -820,12 +826,13 @@ func _restore_decorations_from_save() -> void:
 			var deco_type: int = d.get("type", 0)
 			var pos := Vector2(d.get("x", 0), d.get("y", 0))
 			var scale := Vector2(d.get("scale_x", 0.5), d.get("scale_y", 0.5))
+			var z_idx: int = d.get("z_index", 0)
 			# 如果位置为 (0,0) 且是旧格式迁移来的，随机放置
 			if pos == Vector2.ZERO and d.get("x", 0) == 0 and d.get("y", 0) == 0:
 				var margin := 100.0
 				pos.x = randf_range(margin, aquarium_bounds.size.x - margin)
 				pos.y = randf_range(aquarium_bounds.size.y * 0.4, aquarium_bounds.size.y - 20.0)
-			_place_decoration(deco_type, pos, scale)
+			_place_decoration(deco_type, pos, scale, z_idx)
 		else:
 			# 旧格式：只有类型 int
 			var deco_type: int = d
@@ -833,6 +840,11 @@ func _restore_decorations_from_save() -> void:
 			var x := randf_range(margin, aquarium_bounds.size.x - margin)
 			var y := randf_range(aquarium_bounds.size.y * 0.4, aquarium_bounds.size.y - 20.0)
 			_place_decoration(deco_type, Vector2(x, y))
+	
+	# 恢复后按 z_index 排序
+	var aqua := $Aquarium as Aquarium
+	if aqua and aqua.has_method("_sort_decoration_children"):
+		aqua._sort_decoration_children()
 
 
 func _add_equip_shop_entry(parent: VBoxContainer, eq_type: int) -> void:

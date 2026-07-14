@@ -202,6 +202,18 @@ func _draw() -> void:
 		var fill = handle_hover_fill if hover == name else handle_default_fill
 		draw_rect(hr, fill, true)
 		draw_rect(hr, handle_border, false, 1.0)
+	
+	# ── 层级标签 ──────────────────────────────────────────────────────
+	var layer_text := \"层级: %d\" % deco.z_index
+	var font := ThemeDB.get_fallback_font()
+	var font_size := 18
+	var text_size := font.get_string_size(layer_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+	var label_pos := Vector2(rect.position.x + rect.size.x + 10, rect.position.y + rect.size.y / 2 - text_size.y / 2)
+	# 文字
+	draw_string(font, label_pos, layer_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color(1, 1, 0, 0.9))
+	# 小提示：滚动滚轮调整
+	var hint_pos := Vector2(label_pos.x, label_pos.y + text_size.y + 2)
+	draw_string(font, hint_pos, \"(滚轮调整)\", HORIZONTAL_ALIGNMENT_LEFT, -1, 10, Color(1, 1, 0, 0.5))
 """
 	s.reload()
 	_selection_overlay.set_script(s)
@@ -340,6 +352,37 @@ func _process(_delta: float) -> void:
 	_selection_overlay.queue_redraw()
 
 
+func _change_deco_z_index(delta_z: int) -> void:
+	"""调整选中装饰物的层级，并更新数据和子节点顺序"""
+	if _move_selected_deco == null or _is_dragging_deco:
+		return
+	var deco := _move_selected_deco
+	var new_z: int = max(0, deco.z_index + delta_z)
+	if new_z == deco.z_index:
+		return
+	
+	deco.z_index = new_z
+	
+	# 更新存档数据
+	var deco_type = deco.get_meta(&"deco_type", -1)
+	if deco_type >= 0:
+		Global.update_decoration_instance(deco_type, deco.position, deco.scale, new_z)
+		Global.save_dirty = true
+	
+	# 按 z_index 重排 decoration_container 子节点顺序
+	_sort_decoration_children()
+	
+	_selection_overlay.queue_redraw()
+
+
+func _sort_decoration_children() -> void:
+	"""将 decoration_container 的子节点按 z_index 升序排列（z 越低越靠下）"""
+	var children := decoration_container.get_children()
+	children.sort_custom(func(a, b): return a.z_index < b.z_index)
+	for child in children:
+		decoration_container.move_child(child, -1)
+
+
 var _deco_click_handled_this_frame: bool = false
 
 
@@ -355,6 +398,18 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _move_selected_deco != null:
 			clear_move_selection()
 		return
+	# 滚轮调整层级
+	if event is InputEventMouseButton and event.pressed:
+		if _move_selected_deco == null or _is_dragging_deco:
+			return
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			_change_deco_z_index(1)
+			get_viewport().set_input_as_handled()
+			return
+		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			_change_deco_z_index(-1)
+			get_viewport().set_input_as_handled()
+			return
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
 			# 释放鼠标 = 结束拖拽

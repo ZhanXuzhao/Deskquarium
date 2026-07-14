@@ -122,7 +122,7 @@ func _on_buy_fish(species: int) -> void:
 func _on_buy_decoration(deco_type: int) -> void:
 	var cost: int = DecorationData.get_cost(deco_type)
 	if Global.spend(cost):
-		Global.owned_decorations.append(deco_type)
+		Global.owned_decorations.append({"type": deco_type, "x": 0, "y": 0, "scale_x": 0.5, "scale_y": 0.5})
 		Global.decoration_added.emit(deco_type)
 		Global.save_dirty = true
 		_refresh_buttons()

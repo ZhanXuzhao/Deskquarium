@@ -21,13 +21,13 @@ var scale_factor: float = 1.0
 
 
 # 创建一个可点击的装饰物精灵（带点击区域和元数据）
-static func make_decoration_sprite(deco_type: int) -> Sprite2D:
+static func make_decoration_sprite(deco_type: int, initial_scale: Vector2 = Vector2(0.5, 0.5)) -> Sprite2D:
 	var svg_path := DecorationData.get_svg_path(deco_type)
 	if not ResourceLoader.exists(svg_path):
 		return null
 	var deco := Sprite2D.new()
 	deco.texture = load(svg_path)
-	deco.scale = Vector2(0.5, 0.5)
+	deco.scale = initial_scale
 	deco.set_meta(&"deco_type", deco_type)
 	
 	# 添加点击区域
@@ -44,6 +44,50 @@ static func make_decoration_sprite(deco_type: int) -> Sprite2D:
 	return deco
 
 
+# 查找 owned_decorations 中与装饰物精灵匹配的数据索引
+func _find_decoration_index(sprite: Sprite2D) -> int:
+	var deco_type = sprite.get_meta(&"deco_type", -1)
+	if deco_type < 0:
+		return -1
+	var spos := sprite.position
+	var best_idx := -1
+	var best_dist := INF
+	for i in owned_decorations.size():
+		var d = owned_decorations[i]
+		if typeof(d) == TYPE_DICTIONARY and d.get("type", -1) == deco_type:
+			var dist = Vector2(d.get("x", 0), d.get("y", 0)).distance_squared_to(spos)
+			if dist < best_dist:
+				best_dist = dist
+				best_idx = i
+		elif typeof(d) == TYPE_INT and d == deco_type:
+			# 旧格式（仅类型），取第一个匹配
+			return i
+	return best_idx
+
+
+# 更新指定装饰物的位置/缩放数据（拖拽/拉伸结束后调用）
+func update_decoration_instance(deco_type: int, pos: Vector2, scale: Vector2) -> void:
+	# 尝试按位置查找已有数据并更新
+	for i in owned_decorations.size():
+		var d = owned_decorations[i]
+		if typeof(d) == TYPE_DICTIONARY and d.get("type", -1) == deco_type:
+			if Vector2(d.get("x", 0), d.get("y", 0)).distance_squared_to(pos) < 1.0:
+				d["x"] = pos.x
+				d["y"] = pos.y
+				d["scale_x"] = scale.x
+				d["scale_y"] = scale.y
+				return
+	# 没找到精确匹配 → 更新最后放置的同类型装饰
+	for i in range(owned_decorations.size() - 1, -1, -1):
+		var d = owned_decorations[i]
+		if typeof(d) == TYPE_DICTIONARY and d.get("type", -1) == deco_type:
+			d["x"] = pos.x
+			d["y"] = pos.y
+			d["scale_x"] = scale.x
+			d["scale_y"] = scale.y
+			return
+
+
 # 出售装饰物：由点击回调调用
 func sell_decoration_sprite(deco_sprite: Sprite2D) -> void:
 	var deco_type = deco_sprite.get_meta(&"deco_type", -1)
@@ -55,8 +99,8 @@ func sell_decoration_sprite(deco_sprite: Sprite2D) -> void:
 	total_earned += price
 	save_dirty = true
 	
-	# 从 owned_decorations 中移除一个该类型
-	var idx := owned_decorations.find(deco_type)
+	# 从 owned_decorations 中移除匹配的数据
+	var idx := _find_decoration_index(deco_sprite)
 	if idx >= 0:
 		owned_decorations.remove_at(idx)
 	
@@ -108,7 +152,7 @@ var total_earned: int = 0:
 		save_dirty = true
 
 var unlocked_species: Array[bool] = []
-var owned_decorations: Array[int] = []
+var owned_decorations: Array = []  # Array[int]（旧格式）或 Array[Dictionary]（新格式）
 var has_auto_feeder: bool = false:
 	set(value):
 		has_auto_feeder = value
@@ -242,11 +286,18 @@ func can_add_fish() -> bool:
 
 
 func get_save_data() -> Dictionary:
+	# 统一保存为完整数据格式
+	var deco_save: Array = []
+	for d in owned_decorations:
+		if typeof(d) == TYPE_DICTIONARY:
+			deco_save.append(d.duplicate())
+		elif typeof(d) == TYPE_INT:
+			deco_save.append({"type": d, "x": 0, "y": 0, "scale_x": 0.5, "scale_y": 0.5})
 	return {
 		"coins": coins,
 		"total_earned": total_earned,
 		"unlocked_species": unlocked_species.duplicate(),
-		"owned_decorations": owned_decorations.duplicate(),
+		"owned_decorations": deco_save,
 		"has_auto_feeder": has_auto_feeder,
 		"auto_feeder_enabled": auto_feeder_enabled,
 		"auto_feeder_feed_count": auto_feeder_feed_count,
@@ -269,7 +320,11 @@ func load_save_data(data: Dictionary) -> void:
 	var deco_data = data.get("owned_decorations", [])
 	owned_decorations.clear()
 	for d in deco_data:
-		owned_decorations.append(d)
+		if typeof(d) == TYPE_DICTIONARY:
+			owned_decorations.append(d.duplicate())
+		else:
+			# 旧格式：只有类型 int，补默认位置/缩放
+			owned_decorations.append({"type": d, "x": 0, "y": 0, "scale_x": 0.5, "scale_y": 0.5})
 	has_auto_feeder = data.get("has_auto_feeder", false)
 	auto_feeder_enabled = data.get("auto_feeder_enabled", true)
 	auto_feeder_feed_count = data.get("auto_feeder_feed_count", 3)

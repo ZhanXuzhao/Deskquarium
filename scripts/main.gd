@@ -448,7 +448,7 @@ func _update_ui_positions() -> void:
 
 	var shop_panel := _ui_container.get_node_or_null("ShopPanel") as Panel
 	if shop_panel:
-		shop_panel.position = Vector2(view_size.x / 2 - 250, view_size.y / 2 - 210)
+		shop_panel.position = Vector2(view_size.x / 2 - 500, view_size.y / 2 - 420)
 
 	_update_fish_info_panel_position()
 

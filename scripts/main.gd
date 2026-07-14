@@ -93,6 +93,12 @@ const EDGE_HIGHLIGHT_THICKNESS := 20.0
 var _placement_preview: Sprite2D = null
 var _placement_deco_type: int = -1
 
+# 投喂模式
+var _feed_mode: bool = false
+var _feed_holding: bool = false
+var _feed_hold_time: float = 0.0
+const FEED_INTERVAL: float = 1.0 / 3.0
+
 
 func _ready() -> void:
 	Global.fish_added.connect(_on_fish_added)
@@ -239,6 +245,12 @@ func _process(_delta: float) -> void:
 	if _tiny_mode:
 		_update_tiny_window()
 		_update_resize_cursor()
+	
+	if _feed_mode and _feed_holding:
+		_feed_hold_time += _delta
+		while _feed_hold_time >= FEED_INTERVAL:
+			_feed_hold_time -= FEED_INTERVAL
+			_place_food_at_mouse()
 
 
 func _handle_input() -> void:
@@ -263,6 +275,8 @@ func _handle_input() -> void:
 				aqua.clear_move_selection()
 		elif Global.decoration_placement_active:
 			_cancel_placement()
+		elif _feed_mode:
+			_exit_feed_mode()
 
 	var minus_pressed := Input.is_key_pressed(KEY_MINUS)
 	var equal_pressed := Input.is_key_pressed(KEY_EQUAL)
@@ -369,10 +383,24 @@ func _input(event: InputEvent) -> void:
 		if Global.decoration_placement_active and not shop_panel_open:
 			_cancel_placement()
 			return
+		if _feed_mode:
+			_exit_feed_mode()
+			return
 
 	if Global.decoration_placement_active and not shop_panel_open and event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 			_confirm_placement()
+	
+	if _feed_mode and event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				_feed_holding = true
+				_feed_hold_time = 0.0
+				_place_food_at_mouse()
+			else:
+				_feed_holding = false
+			get_viewport().set_input_as_handled()
+			return
 
 
 func _setup_ui() -> void:
@@ -647,7 +675,7 @@ func _build_side_menu(parent: Node, view_size: Vector2) -> void:
 			"shop":
 				btn.pressed.connect(toggle_shop)
 			"feed":
-				btn.pressed.connect(do_feed)
+				btn.pressed.connect(_toggle_feed_mode.bind(btn))
 			"sell":
 				btn.pressed.connect(_toggle_sell_mode.bind(btn))
 			"move":
@@ -1495,6 +1523,65 @@ func do_feed() -> void:
 		for fish in fish_container.get_children():
 			if fish.has_method("set_food_target"):
 				fish.set_food_target(pellet)
+
+
+# ── 投喂模式 ─────────────────────────────────────────────────────────────
+
+func _toggle_feed_mode(btn: Button) -> void:
+	if not _feed_mode:
+		_enter_feed_mode()
+		btn.modulate = Color(1.0, 0.8, 0.4)
+	else:
+		_exit_feed_mode()
+
+
+func _enter_feed_mode() -> void:
+	_feed_mode = true
+	# 将光标设为鱼食图标（缩放到 32x32）
+	var cursor_tex := load("res://assets/ui/ui_food.svg") as Texture2D
+	if cursor_tex:
+		var img := cursor_tex.get_image()
+		if img:
+			img.resize(32, 32, Image.INTERPOLATE_LANCZOS)
+			var scaled_tex := ImageTexture.create_from_image(img)
+			Input.set_custom_mouse_cursor(scaled_tex, Input.CURSOR_ARROW, Vector2(16, 16))
+
+
+func _exit_feed_mode() -> void:
+	_feed_mode = false
+	_feed_holding = false
+	_feed_hold_time = 0.0
+	Input.set_custom_mouse_cursor(null)
+	if is_instance_valid(_ui_container):
+		var feed_btn := _ui_container.get_node_or_null("Btn_feed") as Button
+		if feed_btn:
+			feed_btn.modulate = Color(1, 1, 1, 1)
+
+
+func _place_food_at_mouse() -> void:
+	if fish_container.get_child_count() == 0:
+		return
+	if not Global.spend(10):
+		return
+	
+	var mouse_pos := get_global_mouse_position()
+	var local_pos := aquarium.to_local(mouse_pos)
+	
+	var margin := 20.0
+	var clamped_x := clampf(local_pos.x, margin, aquarium_bounds.size.x - margin)
+	var clamped_y := clampf(local_pos.y, aquarium_bounds.size.y * 0.3, aquarium_bounds.size.y - margin)
+	
+	var pellet_scene := preload("res://scenes/food/food_pellet.tscn")
+	var pellet_script := preload("res://scripts/food/food_pellet.gd")
+	var pellet := pellet_scene.instantiate()
+	pellet.set_script(pellet_script)
+	pellet.position = Vector2(clamped_x, clamped_y)
+	pellet.bottom_y = aquarium_bounds.position.y + aquarium_bounds.size.y - 10
+	food_container.add_child(pellet)
+	
+	for fish in fish_container.get_children():
+		if fish.has_method("set_food_target"):
+			fish.set_food_target(pellet)
 
 
 func do_upgrade() -> void:

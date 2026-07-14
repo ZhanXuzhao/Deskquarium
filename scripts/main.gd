@@ -202,6 +202,11 @@ func _handle_input() -> void:
 			_hide_fish_info()
 		elif Global.sell_mode:
 			Global.sell_mode = false
+		elif Global.move_mode:
+			Global.move_mode = false
+			var aqua := $Aquarium as Aquarium
+			if aqua and aqua.has_method("clear_move_selection"):
+				aqua.clear_move_selection()
 		elif Global.decoration_placement_active:
 			_cancel_placement()
 
@@ -225,11 +230,25 @@ func _handle_input() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		if Global.sell_mode:
+			Global.sell_mode = false
+			get_viewport().set_input_as_handled()
+			return
+		if Global.move_mode:
+			Global.move_mode = false
+			var aqua := $Aquarium as Aquarium
+			if aqua and aqua.has_method("clear_move_selection"):
+				aqua.clear_move_selection()
+			get_viewport().set_input_as_handled()
+			return
+		if Global.decoration_placement_active and not shop_panel_open:
+			_cancel_placement()
+			return
+
 	if Global.decoration_placement_active and not shop_panel_open and event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 			_confirm_placement()
-		elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
-			_cancel_placement()
 
 
 func _setup_ui() -> void:
@@ -276,6 +295,7 @@ func _update_ui_positions() -> void:
 				{"action": "shop"},
 				{"action": "feed"},
 				{"action": "sell"},
+				{"action": "move"},
 				{"action": "upgrade"},
 			]
 			var btn_count := buttons.size()
@@ -458,6 +478,7 @@ func _build_side_menu(ui: CanvasLayer, view_size: Vector2) -> void:
 		{"text": "商店", "icon": "res://assets/ui/ui_shop.svg", "action": "shop"},
 		{"text": "喂食", "icon": "res://assets/ui/ui_food.svg", "action": "feed"},
 		{"text": "出售", "icon": "res://assets/ui/ui_sell.svg", "action": "sell"},
+		{"text": "移动", "icon": "res://assets/ui/ui_move.svg", "action": "move"},
 		{"text": "升级", "icon": "res://assets/ui/ui_star.svg", "action": "upgrade"},
 	]
 
@@ -493,6 +514,8 @@ func _build_side_menu(ui: CanvasLayer, view_size: Vector2) -> void:
 				btn.pressed.connect(do_feed)
 			"sell":
 				btn.pressed.connect(_toggle_sell_mode.bind(btn))
+			"move":
+				btn.pressed.connect(_toggle_move_mode.bind(btn))
 			"upgrade":
 				btn.pressed.connect(do_upgrade)
 
@@ -506,6 +529,18 @@ func _toggle_sell_mode(btn: Button) -> void:
 	Global.sell_mode_changed.connect(func(active: bool):
 		if is_instance_valid(btn):
 			btn.modulate = Color(1, 0.5, 0.5) if active else Color(1, 1, 1, 1)
+	, CONNECT_ONE_SHOT)
+
+
+func _toggle_move_mode(btn: Button) -> void:
+	Global.move_mode = not Global.move_mode
+	if Global.move_mode:
+		btn.modulate = Color(0.6, 1.0, 0.6)
+	else:
+		btn.modulate = Color(1, 1, 1, 1)
+	Global.move_mode_changed.connect(func(active: bool):
+		if is_instance_valid(btn):
+			btn.modulate = Color(0.6, 1.0, 0.6) if active else Color(1, 1, 1, 1)
 	, CONNECT_ONE_SHOT)
 
 
@@ -716,25 +751,46 @@ func _connect_decoration_interaction(deco: Sprite2D) -> void:
 	if area == null:
 		return
 	
+	var aqua_ref := $Aquarium as Aquarium
+	
 	area.input_event.connect(func(_viewport: Node, event: InputEvent, _shape_idx: int):
 		if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
 			return
+		
+		# 移动模式 - 转发到 aquarium 处理
+		if Global.move_mode and aqua_ref:
+			aqua_ref._handle_decoration_input(deco, event)
+			return
+		
 		if not Global.sell_mode:
 			return
 		Global.sell_decoration_sprite(deco)
 	)
 	
 	area.mouse_entered.connect(func():
-		if Global.sell_mode:
+		if Global.move_mode and aqua_ref and aqua_ref._move_selected_deco != deco:
+			deco.modulate = Color(0.8, 1.0, 0.8, 1)
+		elif Global.sell_mode:
 			deco.modulate = Color(1, 0.6, 0.6, 1)
 	)
 	
 	area.mouse_exited.connect(func():
-		deco.modulate = Color(1, 1, 1, 1)
+		if Global.move_mode:
+			if aqua_ref and aqua_ref._move_selected_deco != deco:
+				deco.modulate = Color(1, 1, 1, 1)
+		elif not Global.sell_mode:
+			deco.modulate = Color(1, 1, 1, 1)
 	)
 	
-	# 出售模式关闭时恢复装饰物颜色
+	# 模式切换时恢复装饰物颜色
 	Global.sell_mode_changed.connect(func(active: bool):
+		if not is_instance_valid(deco):
+			return
+		if not active and not Global.move_mode:
+			deco.modulate = Color(1, 1, 1, 1)
+	)
+	
+	Global.move_mode_changed.connect(func(active: bool):
 		if not is_instance_valid(deco):
 			return
 		if not active:

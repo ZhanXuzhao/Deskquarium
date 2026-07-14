@@ -13,6 +13,7 @@ signal decoration_added(deco_type: int)
 signal decoration_placed(deco_type: int, position: Vector2)
 @warning_ignore("unused_signal")
 signal equipment_added(eq_type: int)
+signal move_mode_changed(active: bool)
 
 const DESIGN_WIDTH := 1920.0
 const DESIGN_HEIGHT := 1080.0
@@ -148,6 +149,7 @@ var feed_mode: bool = false:
 		feed_mode = value
 		if value:
 			sell_mode = false
+			move_mode = false
 		feed_mode_changed.emit(value)
 
 var sell_mode: bool = false:
@@ -155,13 +157,35 @@ var sell_mode: bool = false:
 		sell_mode = value
 		if value:
 			feed_mode = false
+			move_mode = false
 		sell_mode_changed.emit(value)
 		_update_sell_cursor()
+
+var move_mode: bool = false:
+	set(value):
+		move_mode = value
+		if value:
+			feed_mode = false
+			sell_mode = false
+		move_mode_changed.emit(value)
+		_update_move_cursor()
 
 
 func _update_sell_cursor() -> void:
 	if sell_mode:
 		var tex := load("res://assets/ui/cursor_dollar.png") as Texture2D
+		if tex:
+			var img := tex.get_image()
+			img.resize(32, 32, Image.INTERPOLATE_LANCZOS)
+			var cursor_tex := ImageTexture.create_from_image(img)
+			Input.set_custom_mouse_cursor(cursor_tex, Input.CURSOR_ARROW, Vector2(16, 16))
+	else:
+		Input.set_custom_mouse_cursor(null)
+
+
+func _update_move_cursor() -> void:
+	if move_mode:
+		var tex := load("res://assets/ui/ui_move.svg") as Texture2D
 		if tex:
 			var img := tex.get_image()
 			img.resize(32, 32, Image.INTERPOLATE_LANCZOS)
@@ -271,6 +295,7 @@ func reset_state() -> void:
 	save_dirty = false
 	feed_mode = false
 	sell_mode = false
+	move_mode = false
 	decoration_placement_active = false
 	pending_decoration_type = -1
 	unlocked_species = []

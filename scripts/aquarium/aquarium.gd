@@ -70,16 +70,47 @@ func _on_fish_added(fish: Node2D) -> void:
 
 
 func _on_decoration_added(deco_type: int) -> void:
-	var svg_path := DecorationData.get_svg_path(deco_type)
-	if ResourceLoader.exists(svg_path):
-		var deco := Sprite2D.new()
-		deco.texture = load(svg_path)
-		var margin := 100.0
-		var x := randf_range(aquarium_rect.position.x + margin, aquarium_rect.position.x + aquarium_rect.size.x - margin)
-		var y := randf_range(aquarium_rect.position.y + aquarium_rect.size.y * 0.5, aquarium_rect.position.y + aquarium_rect.size.y - 20)
-		deco.position = Vector2(x, y)
-		deco.scale = Vector2(0.5, 0.5)
-		decoration_container.add_child(deco)
+	var deco := Global.make_decoration_sprite(deco_type)
+	if deco == null:
+		return
+	var margin := 100.0
+	var x := randf_range(aquarium_rect.position.x + margin, aquarium_rect.position.x + aquarium_rect.size.x - margin)
+	var y := randf_range(aquarium_rect.position.y + aquarium_rect.size.y * 0.5, aquarium_rect.position.y + aquarium_rect.size.y - 20)
+	deco.position = Vector2(x, y)
+	_connect_decoration_interaction(deco)
+	decoration_container.add_child(deco)
+
+
+func _connect_decoration_interaction(deco: Sprite2D) -> void:
+	"""为装饰物连接出售模式的点击和悬停交互"""
+	var area := deco.get_node_or_null("ClickArea") as Area2D
+	if area == null:
+		return
+	
+	area.input_event.connect(func(_viewport: Node, event: InputEvent, _shape_idx: int):
+		if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+			return
+		if not Global.sell_mode:
+			return
+		Global.sell_decoration_sprite(deco)
+	)
+	
+	area.mouse_entered.connect(func():
+		if Global.sell_mode:
+			deco.modulate = Color(1, 0.6, 0.6, 1)
+	)
+	
+	area.mouse_exited.connect(func():
+		deco.modulate = Color(1, 1, 1, 1)
+	)
+	
+	# 出售模式关闭时恢复装饰物颜色
+	Global.sell_mode_changed.connect(func(active: bool):
+		if not is_instance_valid(deco):
+			return
+		if not active:
+			deco.modulate = Color(1, 1, 1, 1)
+	)
 
 
 func spawn_food() -> void:

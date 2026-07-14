@@ -30,6 +30,10 @@ static func get_svg_path(deco_type: DecorationType) -> String:
 			return "res://assets/decorations/deco_rock.svg"
 	return ""
 
+static func get_sell_price(deco_type: DecorationType) -> int:
+	return get_cost(deco_type) / 2
+
+
 static func get_description(deco_type: DecorationType) -> String:
 	match deco_type:
 		DecorationType.PLANT:

@@ -21,7 +21,7 @@ var aquarium_bounds: Rect2:
 		return Rect2(0, 0, Global.DESIGN_WIDTH, Global.DESIGN_HEIGHT)
 
 var _fish_shop_list: VBoxContainer
-var _deco_shop_list: VBoxContainer
+var _deco_shop_list: GridContainer
 var _equip_shop_list: VBoxContainer
 var _fish_info_panel: Panel = null
 var _fish_info_name: Label = null
@@ -411,8 +411,8 @@ func _build_shop_panel(ui: CanvasLayer, view_size: Vector2) -> void:
 
 	var shop_panel := Panel.new()
 	shop_panel.name = "ShopPanel"
-	shop_panel.size = Vector2(500, 420)
-	shop_panel.position = Vector2(view_size.x / 2 - 250, view_size.y / 2 - 210)
+	shop_panel.size = Vector2(1000, 840)
+	shop_panel.position = Vector2(view_size.x / 2 - 500, view_size.y / 2 - 420)
 	shop_panel.visible = false
 	ui.add_child(shop_panel)
 
@@ -426,13 +426,13 @@ func _build_shop_panel(ui: CanvasLayer, view_size: Vector2) -> void:
 	var close_btn := Button.new()
 	close_btn.name = "CloseShopBtn"
 	close_btn.text = "关闭"
-	close_btn.position = Vector2(430, 10)
+	close_btn.position = Vector2(930, 10)
 	close_btn.pressed.connect(toggle_shop)
 	shop_panel.add_child(close_btn)
 
 	var tab_container := TabContainer.new()
 	tab_container.name = "TabContainer"
-	tab_container.size = Vector2(480, 350)
+	tab_container.size = Vector2(980, 770)
 	tab_container.position = Vector2(10, 45)
 	shop_panel.add_child(tab_container)
 
@@ -453,8 +453,9 @@ func _build_shop_panel(ui: CanvasLayer, view_size: Vector2) -> void:
 	var deco_scroll := ScrollContainer.new()
 	deco_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	deco_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_deco_shop_list = VBoxContainer.new()
+	_deco_shop_list = GridContainer.new()
 	_deco_shop_list.name = "DecorationList"
+	_deco_shop_list.columns = 3
 	_deco_shop_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	deco_scroll.add_child(_deco_shop_list)
 	deco_tab.add_child(deco_scroll)
@@ -573,6 +574,8 @@ func _refresh_shop_ui() -> void:
 		_add_fish_shop_entry(_fish_shop_list, species)
 
 	for deco_type in DecorationData.DecorationType.values() as Array[int]:
+		if deco_type == DecorationData.DecorationType.COUNT:
+			continue
 		_add_deco_shop_entry(_deco_shop_list, deco_type)
 
 	for eq_type in EquipmentData.EquipmentType.values() as Array[int]:
@@ -616,34 +619,64 @@ func _add_fish_shop_entry(parent: VBoxContainer, species: int) -> void:
 	parent.add_child(panel)
 
 
-func _add_deco_shop_entry(parent: VBoxContainer, deco_type: int) -> void:
-	var panel := Panel.new()
-	panel.custom_minimum_size = Vector2(0, 45)
+func _add_deco_shop_entry(parent: GridContainer, deco_type: int) -> void:
+	var card := Panel.new()
+	card.custom_minimum_size = Vector2(180, 150)
+	card.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 
-	var hbox := HBoxContainer.new()
-	hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var vbox := VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_theme_constant_override("separation", 2)
 
+	# 装饰图片预览（固定 64×64，用 CenterContainer 约束）
+	var tex_path := DecorationData.get_texture_path(deco_type)
+	var tex := load(tex_path) as Texture2D if ResourceLoader.exists(tex_path) else null
+
+	var center := CenterContainer.new()
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	center.custom_minimum_size = Vector2(0, 64)
+
+	var preview := TextureRect.new()
+	if tex:
+		preview.texture = tex
+		preview.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	else:
+		preview.modulate = Color(0.3, 0.3, 0.3, 1)
+	preview.custom_minimum_size = Vector2(64, 64)
+	center.add_child(preview)
+	vbox.add_child(center)
+
+	# 名称
 	var name_label := Label.new()
 	name_label.text = DecorationData.get_display_name(deco_type)
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	name_label.add_theme_font_size_override("font_size", 11)
+	vbox.add_child(name_label)
 
+	# 价格
 	var cost: int = DecorationData.get_cost(deco_type)
 	var cost_label := Label.new()
 	cost_label.text = "¥%d" % cost
-	cost_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cost_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cost_label.add_theme_font_size_override("font_size", 12)
+	cost_label.modulate = Color(1, 0.85, 0, 1)
+	vbox.add_child(cost_label)
 
+	# 购买按钮
 	var buy_btn := Button.new()
 	buy_btn.text = "购买"
+	buy_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	buy_btn.disabled = Global.coins < cost
 	var dt := deco_type
 	buy_btn.pressed.connect(func(): _buy_decoration(dt))
+	vbox.add_child(buy_btn)
 
-	hbox.add_child(name_label)
-	hbox.add_child(cost_label)
-	hbox.add_child(buy_btn)
-	panel.add_child(hbox)
-	parent.add_child(panel)
+	card.add_child(vbox)
+	parent.add_child(card)
 
 
 func _buy_fish(species: int) -> void:
@@ -680,9 +713,9 @@ func _enter_placement_mode(deco_type: int) -> void:
 	# 创建预览精灵
 	_placement_preview = Sprite2D.new()
 	_placement_preview.name = "PlacementPreview"
-	var svg_path := DecorationData.get_svg_path(deco_type)
-	if ResourceLoader.exists(svg_path):
-		_placement_preview.texture = load(svg_path)
+	var tex_path := DecorationData.get_texture_path(deco_type)
+	if ResourceLoader.exists(tex_path):
+		_placement_preview.texture = load(tex_path)
 	_placement_preview.scale = Vector2(0.5, 0.5)
 	_placement_preview.modulate = Color(1, 1, 1, 0.6)  # 半透明
 	_placement_preview.z_index = 10
@@ -784,18 +817,27 @@ func _connect_decoration_interaction(deco: Sprite2D) -> void:
 	)
 	
 	# 模式切换时恢复装饰物颜色
-	Global.sell_mode_changed.connect(func(active: bool):
+	var sell_lambda := func(active: bool):
 		if not is_instance_valid(deco):
 			return
 		if not active and not Global.move_mode:
 			deco.modulate = Color(1, 1, 1, 1)
-	)
 	
-	Global.move_mode_changed.connect(func(active: bool):
+	var move_lambda := func(active: bool):
 		if not is_instance_valid(deco):
 			return
 		if not active:
 			deco.modulate = Color(1, 1, 1, 1)
+	
+	Global.sell_mode_changed.connect(sell_lambda)
+	Global.move_mode_changed.connect(move_lambda)
+	
+	# 装饰物被销毁时自动断开全局信号，避免悬空捕获
+	deco.tree_exited.connect(func():
+		if Global.sell_mode_changed.is_connected(sell_lambda):
+			Global.sell_mode_changed.disconnect(sell_lambda)
+		if Global.move_mode_changed.is_connected(move_lambda):
+			Global.move_mode_changed.disconnect(move_lambda)
 	)
 
 

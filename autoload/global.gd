@@ -22,11 +22,11 @@ var scale_factor: float = 1.0
 
 # 创建一个可点击的装饰物精灵（带点击区域和元数据）
 static func make_decoration_sprite(deco_type: int, initial_scale: Vector2 = Vector2(0.5, 0.5)) -> Sprite2D:
-	var svg_path := DecorationData.get_svg_path(deco_type)
-	if not ResourceLoader.exists(svg_path):
+	var tex_path := DecorationData.get_texture_path(deco_type)
+	if not ResourceLoader.exists(tex_path):
 		return null
 	var deco := Sprite2D.new()
-	deco.texture = load(svg_path)
+	deco.texture = load(tex_path)
 	deco.scale = initial_scale
 	deco.set_meta(&"deco_type", deco_type)
 	

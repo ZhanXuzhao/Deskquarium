@@ -470,19 +470,28 @@ func _connect_decoration_interaction(deco: Sprite2D) -> void:
 			deco.modulate = Color(1, 1, 1, 1)
 	)
 	
-	# 模式切换时恢复装饰物颜色
-	Global.sell_mode_changed.connect(func(active: bool):
+	# 模式切换时恢复装饰物颜色（存为变量以便后续断开）
+	var sell_lambda := func(active: bool):
 		if not is_instance_valid(deco):
 			return
 		if not active and not Global.move_mode:
 			deco.modulate = Color(1, 1, 1, 1)
-	)
 	
-	Global.move_mode_changed.connect(func(active: bool):
+	var move_lambda := func(active: bool):
 		if not is_instance_valid(deco):
 			return
 		if not active:
 			deco.modulate = Color(1, 1, 1, 1)
+	
+	Global.sell_mode_changed.connect(sell_lambda)
+	Global.move_mode_changed.connect(move_lambda)
+	
+	# 装饰物被销毁时自动断开全局信号，避免悬空捕获
+	deco.tree_exited.connect(func():
+		if Global.sell_mode_changed.is_connected(sell_lambda):
+			Global.sell_mode_changed.disconnect(sell_lambda)
+		if Global.move_mode_changed.is_connected(move_lambda):
+			Global.move_mode_changed.disconnect(move_lambda)
 	)
 
 

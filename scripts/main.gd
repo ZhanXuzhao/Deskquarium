@@ -112,6 +112,8 @@ func _ready() -> void:
 	SaveManager.load_game()
 	_restore_fish_from_save()
 	# 装饰物和设备的恢复由 _on_game_loaded 信号处理
+	# 等待一帧确保 UI 和 viewport 就绪后，按启动模式设置
+	call_deferred(&"_apply_startup_mode")
 
 
 func _on_window_resized() -> void:
@@ -458,7 +460,7 @@ func _update_ui_positions() -> void:
 		_game_menu_bg.size = view_size
 		_game_menu_bg.position = Vector2.ZERO
 	if _game_menu_panel:
-		_game_menu_panel.position = Vector2(view_size.x / 2 - 110, view_size.y / 2 - 60)
+		_game_menu_panel.position = Vector2(view_size.x / 2 - 110, view_size.y / 2 - 110)
 
 	# Timescale label
 	if _timescale_label:
@@ -713,10 +715,16 @@ func _enter_tiny_mode() -> void:
 	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
 	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP, true)
 	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-	DisplayServer.window_set_size(Vector2i(TINY_WIDTH, TINY_HEIGHT))
-	# 居中
-	var screen_center := DisplayServer.screen_get_size() / 2
-	DisplayServer.window_set_position(Vector2i(screen_center.x - TINY_WIDTH / 2, screen_center.y - TINY_HEIGHT / 2))
+	
+	# 优先使用存档中或上次退出 Tiny 模式时的尺寸和位置
+	if Global.tiny_window_size != Vector2i.ZERO:
+		DisplayServer.window_set_size(Global.tiny_window_size)
+		DisplayServer.window_set_position(Global.tiny_window_pos)
+	else:
+		DisplayServer.window_set_size(Vector2i(TINY_WIDTH, TINY_HEIGHT))
+		# 居中
+		var screen_center := DisplayServer.screen_get_size() / 2
+		DisplayServer.window_set_position(Vector2i(screen_center.x - TINY_WIDTH / 2, screen_center.y - TINY_HEIGHT / 2))
 	
 	_hide_all_ui()
 	
@@ -727,6 +735,10 @@ func _enter_tiny_mode() -> void:
 
 
 func _exit_tiny_mode() -> void:
+	# 记录当前 Tiny 窗口尺寸/位置，供下次进入时复用（也会通过 Global 存档）
+	Global.tiny_window_size = DisplayServer.window_get_size()
+	Global.tiny_window_pos = DisplayServer.window_get_position()
+
 	_drag_active = false
 	_resize_active = false
 	Input.set_custom_mouse_cursor(null)
@@ -1956,8 +1968,8 @@ func _build_game_menu(parent: Node, view_size: Vector2) -> void:
 
 	_game_menu_panel = Panel.new()
 	_game_menu_panel.name = "GameMenuPanel"
-	_game_menu_panel.size = Vector2(220, 160)
-	_game_menu_panel.position = Vector2(view_size.x / 2 - 110, view_size.y / 2 - 80)
+	_game_menu_panel.size = Vector2(220, 220)
+	_game_menu_panel.position = Vector2(view_size.x / 2 - 110, view_size.y / 2 - 110)
 	_game_menu_panel.visible = false
 	parent.add_child(_game_menu_panel)
 
@@ -1981,9 +1993,29 @@ func _build_game_menu(parent: Node, view_size: Vector2) -> void:
 	_game_menu_panel.add_child(restart_btn)
 	restart_btn.pressed.connect(_on_restart_pressed)
 
+	# ── 启动模式选择 ──
+	var mode_label := Label.new()
+	mode_label.text = "启动模式"
+	mode_label.position = Vector2(20, 122)
+	mode_label.add_theme_font_size_override("font_size", 12)
+	_game_menu_panel.add_child(mode_label)
+
+	var mode_option := OptionButton.new()
+	mode_option.name = "StartupModeOption"
+	mode_option.position = Vector2(20, 142)
+	mode_option.size = Vector2(180, 28)
+	mode_option.add_item("普通模式", Global.STARTUP_NORMAL)
+	mode_option.add_item("壁纸模式", Global.STARTUP_WALLPAPER)
+	mode_option.add_item("Tiny 模式", Global.STARTUP_TINY)
+	mode_option.selected = Global.startup_mode
+	_game_menu_panel.add_child(mode_option)
+	mode_option.item_selected.connect(func(index: int):
+		Global.startup_mode = mode_option.get_item_id(index)
+	)
+
 	var cancel_btn := Button.new()
 	cancel_btn.text = "取消"
-	cancel_btn.position = Vector2(20, 119)
+	cancel_btn.position = Vector2(20, 180)
 	cancel_btn.size = Vector2(180, 30)
 	_game_menu_panel.add_child(cancel_btn)
 	cancel_btn.pressed.connect(_toggle_game_menu)
@@ -2008,6 +2040,24 @@ func _on_save_pressed() -> void:
 func _on_restart_pressed() -> void:
 	_toggle_game_menu()
 	SaveManager.reset_save()
+
+
+func _apply_startup_mode() -> void:
+	match Global.startup_mode:
+		Global.STARTUP_WALLPAPER:
+			if not _wallpaper_mode:
+				_enter_wallpaper_mode()
+				if is_instance_valid(_ui_container):
+					var btn := _ui_container.get_node_or_null("Btn_wallpaper") as Button
+					if btn:
+						btn.modulate = Color(0.6, 1.0, 0.8)
+		Global.STARTUP_TINY:
+			if not _tiny_mode:
+				_enter_tiny_mode()
+				if is_instance_valid(_ui_container):
+					var btn := _ui_container.get_node_or_null("Btn_tiny") as Button
+					if btn:
+						btn.modulate = Color(0.8, 0.6, 1.0)
 
 
 # ── Timescale ────────────────────────────────────────────────────────────

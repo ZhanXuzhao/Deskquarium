@@ -186,6 +186,18 @@ var auto_buy_targets: Dictionary = {}:
 	set(value):
 		auto_buy_targets = value
 		save_dirty = true
+const STARTUP_NORMAL := 0
+const STARTUP_WALLPAPER := 1
+const STARTUP_TINY := 2
+
+var startup_mode: int = STARTUP_NORMAL:
+	set(value):
+		startup_mode = value
+		save_dirty = true
+
+var tiny_window_size: Vector2i = Vector2i.ZERO
+var tiny_window_pos: Vector2i = Vector2i.ZERO
+
 var save_dirty: bool = false
 var fish_count: int = 0
 var max_fish: int = 6
@@ -312,6 +324,11 @@ func get_save_data() -> Dictionary:
 		"auto_buy_targets": auto_buy_targets.duplicate(),
 		"max_fish": max_fish,
 		"time_scale": Engine.time_scale,
+		"tiny_window_size_x": tiny_window_size.x,
+		"tiny_window_size_y": tiny_window_size.y,
+		"tiny_window_pos_x": tiny_window_pos.x,
+		"tiny_window_pos_y": tiny_window_pos.y,
+		"startup_mode": startup_mode,
 	}
 
 
@@ -345,6 +362,9 @@ func load_save_data(data: Dictionary) -> void:
 	auto_buy_targets = converted_targets
 	max_fish = data.get("max_fish", 6)
 	Engine.time_scale = data.get("time_scale", 1.0)
+	tiny_window_size = Vector2i(data.get("tiny_window_size_x", 0), data.get("tiny_window_size_y", 0))
+	tiny_window_pos = Vector2i(data.get("tiny_window_pos_x", 0), data.get("tiny_window_pos_y", 0))
+	startup_mode = data.get("startup_mode", STARTUP_NORMAL)
 	check_unlocks()
 	game_loaded.emit()
 
@@ -372,3 +392,6 @@ func reset_state() -> void:
 	has_auto_buy = false
 	auto_buy_targets = {}
 	Engine.time_scale = 1.0
+	startup_mode = STARTUP_NORMAL
+	tiny_window_size = Vector2i.ZERO
+	tiny_window_pos = Vector2i.ZERO

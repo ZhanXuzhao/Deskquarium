@@ -383,6 +383,40 @@ func _sort_decoration_children() -> void:
 		decoration_container.move_child(child, -1)
 
 
+func _start_deco_resize_from_click(deco: Sprite2D, click_pos: Vector2) -> void:
+	"""从空白区域点击路由到装饰物控制点/边缘检测，开始拖拽"""
+	var area := deco.get_node_or_null("ClickArea") as Area2D
+	if area == null:
+		return
+	var local_click := area.to_local(click_pos)
+	var click_parent := deco.position + local_click * deco.scale
+	var handle := _hit_test_handle(deco, click_parent)
+	
+	if handle != "":
+		_move_selected_deco = deco
+		_is_dragging_deco = true
+		_deco_drag_type = handle
+		_deco_drag_start_mouse_global = click_pos
+		_deco_drag_start_pos = deco.position
+		_deco_drag_start_scale = deco.scale
+		_deco_drag_start_tex_size = deco.texture.get_size() if deco.texture else Vector2(64, 64)
+		_selection_overlay.queue_redraw()
+		return
+	
+	var edge := ""
+	if _move_selected_deco == deco:
+		edge = _hit_test_edge(deco, click_parent)
+	if edge != "":
+		_move_selected_deco = deco
+		_is_dragging_deco = true
+		_deco_drag_type = edge
+		_deco_drag_start_mouse_global = click_pos
+		_deco_drag_start_pos = deco.position
+		_deco_drag_start_scale = deco.scale
+		_deco_drag_start_tex_size = deco.texture.get_size() if deco.texture else Vector2(64, 64)
+		_selection_overlay.queue_redraw()
+
+
 var _deco_click_handled_this_frame: bool = false
 
 
@@ -396,6 +430,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		# 左键点击空白区域 → 取消选中
 		if _move_selected_deco != null:
+			# 如果点击位置在选中装饰的包围盒内（含手柄区域），路由到装饰物处理
+			var click_pos := get_global_mouse_position()
+			var deco_rect := _get_deco_rect(_move_selected_deco)
+			var expanded := deco_rect.grow(HANDLE_HIT)
+			if expanded.has_point(click_pos):
+				_start_deco_resize_from_click(_move_selected_deco, click_pos)
+				return
 			clear_move_selection()
 		return
 	# 滚轮调整层级

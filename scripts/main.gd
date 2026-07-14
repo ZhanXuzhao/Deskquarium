@@ -707,12 +707,8 @@ func _confirm_placement() -> void:
 	
 	var pos := _placement_preview.position
 	var scale := _placement_preview.scale
-	# 新装饰默认放在最上层（当前最大 z_index + 1）
-	var max_z := 0
-	for child in decoration_container.get_children():
-		if child is Sprite2D and child.name != "PlacementPreview" and child.z_index > max_z:
-			max_z = child.z_index
-	var new_z := max_z + 1
+	# 新装饰默认层级为 10
+	var new_z := 10
 	_place_decoration(_placement_deco_type, pos, scale, new_z)
 	Global.owned_decorations.append({"type": _placement_deco_type, "x": pos.x, "y": pos.y, "scale_x": scale.x, "scale_y": scale.y, "z_index": new_z})
 	Global.decoration_placed.emit(_placement_deco_type, pos)

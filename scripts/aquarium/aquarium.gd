@@ -19,11 +19,10 @@ var _water_surface: ColorRect = null
 var _water_surface_material: ShaderMaterial = null
 
 
-# 鱼缸边界 = 全窗口，无边距
+# 鱼缸边界 = 设计分辨率空间
 var aquarium_rect: Rect2:
 	get:
-		var view_size := get_viewport_rect().size
-		return Rect2(0, 0, view_size.x, view_size.y)
+		return Rect2(0, 0, Global.DESIGN_WIDTH, Global.DESIGN_HEIGHT)
 
 
 func _ready() -> void:
@@ -54,10 +53,9 @@ func _update_water_surface() -> void:
 	if _water_surface == null:
 		return
 	
-	var view_size := get_viewport_rect().size
-	var surf_height := view_size.y * water_surface_height_ratio
+	var surf_height := Global.DESIGN_HEIGHT * water_surface_height_ratio
 	
-	_water_surface.size = Vector2(view_size.x, surf_height)
+	_water_surface.size = Vector2(Global.DESIGN_WIDTH, surf_height)
 	_water_surface.position = Vector2.ZERO
 
 

@@ -73,9 +73,9 @@ func _do_auto_feed(food_container: Node2D) -> void:
 
 
 func _get_aquarium_rect() -> Rect2:
-	var view_size := get_viewport_rect().size
+	# 使用设计空间坐标（Aquarium 的缩放由 main.gd 处理）
 	var margin := 50.0
 	var top_margin := 80.0
 	var right_margin := 100.0
 	var bottom_margin := 20.0
-	return Rect2(margin, top_margin, view_size.x - margin - right_margin, view_size.y - top_margin - bottom_margin)
+	return Rect2(margin, top_margin, Global.DESIGN_WIDTH - margin - right_margin, Global.DESIGN_HEIGHT - top_margin - bottom_margin)

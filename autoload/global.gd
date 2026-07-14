@@ -14,6 +14,10 @@ signal decoration_placed(deco_type: int, position: Vector2)
 @warning_ignore("unused_signal")
 signal equipment_added(eq_type: int)
 
+const DESIGN_WIDTH := 1920.0
+const DESIGN_HEIGHT := 1080.0
+var scale_factor: float = 1.0
+
 var decoration_placement_active: bool = false
 var pending_decoration_type: int = -1
 signal feed_mode_changed(active: bool)

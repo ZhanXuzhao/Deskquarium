@@ -18,8 +18,7 @@ var _prev_equal: bool = false
 
 var aquarium_bounds: Rect2:
 	get:
-		var view_size := get_viewport_rect().size
-		return Rect2(0, 0, view_size.x, view_size.y)
+		return Rect2(0, 0, Global.DESIGN_WIDTH, Global.DESIGN_HEIGHT)
 
 var _fish_shop_list: VBoxContainer
 var _deco_shop_list: VBoxContainer
@@ -61,20 +60,19 @@ func _ready() -> void:
 	_setup_background_layer()
 	_setup_ui()
 
+	# 初始缩放（在 UI 构建之后，确保 viewport 已有效）
+	call_deferred(&"_update_aquarium_scale")
+
 	SaveManager.load_game()
 	_restore_fish_from_save()
 	# 装饰物和设备的恢复由 _on_game_loaded 信号处理
 
 
 func _on_window_resized() -> void:
+	_update_aquarium_scale()
 	_update_background_size()
 	_update_ui_positions()
 	_update_fish_info_panel_position()
-	for fish in fish_container.get_children():
-		if fish.has_method("set_aquarium_bounds"):
-			fish.set_aquarium_bounds(aquarium_bounds)
-	if aquarium.has_method("_update_water_surface"):
-		aquarium._update_water_surface()
 
 
 func _setup_background_layer() -> void:
@@ -99,6 +97,26 @@ func _update_background_size() -> void:
 	var view_size := get_viewport_rect().size
 	_bg_rect.position = Vector2.ZERO
 	_bg_rect.size = view_size
+
+
+func _update_aquarium_scale() -> void:
+	"""根据窗口宽度缩放 Aquarium，并底部对齐"""
+	var view_size := get_viewport_rect().size
+	var scale := view_size.x / Global.DESIGN_WIDTH
+	Global.scale_factor = scale
+	
+	aquarium.scale = Vector2(scale, scale)
+	# 底部对齐：Aquarium 底部边缘 = 视口底部
+	aquarium.position = Vector2(0, view_size.y - Global.DESIGN_HEIGHT * scale)
+	
+	# 更新水面
+	if aquarium.has_method("_update_water_surface"):
+		aquarium._update_water_surface()
+	
+	# 更新所有鱼的边界
+	for fish in fish_container.get_children():
+		if fish.has_method("set_aquarium_bounds"):
+			fish.set_aquarium_bounds(aquarium_bounds)
 
 
 func add_fish_if_empty() -> void:
@@ -639,14 +657,16 @@ func _enter_placement_mode(deco_type: int) -> void:
 
 
 func _update_placement_preview() -> void:
-	"""更新预览跟随鼠标位置"""
+	"""更新预览跟随鼠标位置（转换到 Aquarium 本地坐标 = 设计空间）"""
 	if _placement_preview == null:
 		return
 	var mouse_pos := get_global_mouse_position()
+	# 转换到 Aquarium 本地设计空间坐标
+	var local_pos := aquarium.to_local(mouse_pos)
 	# 限制在鱼缸范围内
 	var margin := 20.0
-	var clamped_x := clampf(mouse_pos.x, margin, aquarium_bounds.size.x - margin)
-	var clamped_y := clampf(mouse_pos.y, aquarium_bounds.size.y * 0.3, aquarium_bounds.size.y - margin)
+	var clamped_x := clampf(local_pos.x, margin, aquarium_bounds.size.x - margin)
+	var clamped_y := clampf(local_pos.y, aquarium_bounds.size.y * 0.3, aquarium_bounds.size.y - margin)
 	_placement_preview.position = Vector2(clamped_x, clamped_y)
 
 

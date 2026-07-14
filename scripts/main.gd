@@ -155,10 +155,6 @@ func _update_aquarium_scale() -> void:
 	# 底部对齐：Aquarium 底部边缘 = 视口底部
 	aquarium.position = Vector2(0, view_size.y - Global.DESIGN_HEIGHT * scale)
 	
-	# 更新水面
-	if aquarium.has_method("_update_water_surface"):
-		aquarium._update_water_surface()
-	
 	# 更新所有鱼的边界
 	for fish in fish_container.get_children():
 		if fish.has_method("set_aquarium_bounds"):

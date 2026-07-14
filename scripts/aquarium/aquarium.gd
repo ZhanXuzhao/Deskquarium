@@ -7,15 +7,6 @@ class_name Aquarium
 @onready var decoration_container: Node2D = $DecorationContainer
 var food_pellets: Array[Node2D] = []
 
-# 水面高度比例（占视口高度百分比，0.0~1.0）
-var water_surface_height_ratio: float = 0.06:
-	set(value):
-		water_surface_height_ratio = clampf(value, 0.0, 0.5)
-		_update_water_surface()
-
-var _water_surface: ColorRect = null
-var _water_surface_material: ShaderMaterial = null
-
 # ── Decorations move/resize mode ──────────────────────────────────────────
 var _move_selected_deco: Sprite2D = null
 var _selection_overlay: Node2D = null
@@ -112,40 +103,8 @@ func _ready() -> void:
 	Global.decoration_added.connect(_on_decoration_added)
 	Global.move_mode_changed.connect(_on_move_mode_changed)
 	# 不再设置 Aquarium 节点的缩放，由 main.gd 直接控制背景
-	_setup_water_surface()
 	_setup_selection_overlay()
 	set_process_unhandled_input(true)
-
-
-func _setup_water_surface() -> void:
-	var shader := preload("res://shaders/water_surface.gdshader") as Shader
-	if shader == null:
-		return
-	
-	_water_surface_material = ShaderMaterial.new()
-	_water_surface_material.shader = shader
-	
-	_water_surface = ColorRect.new()
-	_water_surface.name = "WaterSurface"
-	_water_surface.material = _water_surface_material
-	_water_surface.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_water_surface)
-	
-	_update_water_surface()
-
-
-func _update_water_surface() -> void:
-	if _water_surface == null:
-		return
-	
-	var surf_height := Global.DESIGN_HEIGHT * water_surface_height_ratio
-	
-	_water_surface.size = Vector2(Global.DESIGN_WIDTH, surf_height)
-	_water_surface.position = Vector2.ZERO
-
-
-func set_water_surface_height_ratio(value: float) -> void:
-	water_surface_height_ratio = value
 
 
 # ── Selection Overlay ────────────────────────────────────────────────────

@@ -11,6 +11,8 @@ const _AutoBuyerScript := preload("res://scripts/managers/auto_buyer.gd")
 var _bg_layer: CanvasLayer = null
 var _bg_rect: ColorRect = null
 
+var _ui_container: Node2D
+
 var shop_panel_open: bool = false
 var _selected_fish: Fish = null
 var _prev_minus: bool = false
@@ -379,14 +381,19 @@ func _setup_ui() -> void:
 	ui.name = "UI"
 	add_child(ui)
 
+	var container := Node2D.new()
+	container.name = "UIContainer"
+	ui.add_child(container)
+	_ui_container = container
+
 	var view_size := get_viewport_rect().size
 
-	_build_hud(ui, view_size)
-	_build_shop_panel(ui, view_size)
-	_build_side_menu(ui, view_size)
-	_build_fish_info_panel(ui, view_size)
-	_build_game_menu(ui, view_size)
-	_build_timescale_label(ui, view_size)
+	_build_hud(container, view_size)
+	_build_shop_panel(container, view_size)
+	_build_side_menu(container, view_size)
+	_build_fish_info_panel(container, view_size)
+	_build_game_menu(container, view_size)
+	_build_timescale_label(container, view_size)
 
 
 func _update_fish_count_display(_fish: Node2D = null, _price: int = 0) -> void:
@@ -395,23 +402,22 @@ func _update_fish_count_display(_fish: Node2D = null, _price: int = 0) -> void:
 
 
 func _update_ui_positions() -> void:
-	var ui := get_node_or_null("UI") as CanvasLayer
-	if ui == null:
+	if not is_instance_valid(_ui_container):
 		return
 
 	var view_size := get_viewport_rect().size
 
 	# HUD
-	var hud_bg := ui.get_node_or_null("HUDBg") as ColorRect
+	var hud_bg := _ui_container.get_node_or_null("HUDBg") as ColorRect
 	if hud_bg:
 		hud_bg.size = Vector2(view_size.x, 50)
 
-	var fish_count_label := ui.get_node_or_null("FishCountLabel") as Label
+	var fish_count_label := _ui_container.get_node_or_null("FishCountLabel") as Label
 	if fish_count_label:
 		fish_count_label.position = Vector2(view_size.x - 150, 15)
 
 	# Side menu
-	for child in ui.get_children():
+	for child in _ui_container.get_children():
 		if child is Button and child.name.begins_with("Btn_"):
 			var action := child.name.trim_prefix("Btn_")
 			var buttons := [
@@ -435,19 +441,19 @@ func _update_ui_positions() -> void:
 					break
 
 	# Shop panel
-	var shop_bg := ui.get_node_or_null("ShopBg") as ColorRect
+	var shop_bg := _ui_container.get_node_or_null("ShopBg") as ColorRect
 	if shop_bg:
 		shop_bg.size = view_size
 		shop_bg.position = Vector2.ZERO
 
-	var shop_panel := ui.get_node_or_null("ShopPanel") as Panel
+	var shop_panel := _ui_container.get_node_or_null("ShopPanel") as Panel
 	if shop_panel:
 		shop_panel.position = Vector2(view_size.x / 2 - 250, view_size.y / 2 - 210)
 
 	_update_fish_info_panel_position()
 
 	# Menu button
-	var menu_btn := ui.get_node_or_null("MenuBtn") as Button
+	var menu_btn := _ui_container.get_node_or_null("MenuBtn") as Button
 	if menu_btn:
 		menu_btn.position = Vector2(view_size.x - 60, 12)
 
@@ -463,19 +469,19 @@ func _update_ui_positions() -> void:
 		_timescale_label.position = Vector2(view_size.x - 280, 15)
 
 
-func _build_hud(ui: CanvasLayer, view_size: Vector2) -> void:
+func _build_hud(parent: Node, view_size: Vector2) -> void:
 	var bg := ColorRect.new()
 	bg.name = "HUDBg"
 	bg.color = Color(0, 0, 0, 0.3)
 	bg.size = Vector2(view_size.x, 50)
 	bg.position = Vector2.ZERO
-	ui.add_child(bg)
+	parent.add_child(bg)
 
 	var coin_icon := Sprite2D.new()
 	coin_icon.texture = load("res://assets/ui/ui_coin.svg")
 	coin_icon.scale = Vector2(0.5, 0.5)
 	coin_icon.position = Vector2(30, 25)
-	ui.add_child(coin_icon)
+	parent.add_child(coin_icon)
 
 	_coin_label = Label.new()
 	_coin_label.name = "CoinLabel"
@@ -483,7 +489,7 @@ func _build_hud(ui: CanvasLayer, view_size: Vector2) -> void:
 	_coin_label.position = Vector2(50, 12)
 	_coin_label.add_theme_font_size_override("font_size", 18)
 	_coin_label.modulate = Color(1, 1, 1, 0.9)
-	ui.add_child(_coin_label)
+	parent.add_child(_coin_label)
 	Global.coins_changed.connect(func(amount: int):
 		if is_instance_valid(_coin_label):
 			_coin_label.text = "金币: %d" % amount
@@ -495,7 +501,7 @@ func _build_hud(ui: CanvasLayer, view_size: Vector2) -> void:
 	_earned_label.position = Vector2(50, 34)
 	_earned_label.add_theme_font_size_override("font_size", 11)
 	_earned_label.modulate = Color(1, 1, 1, 0.6)
-	ui.add_child(_earned_label)
+	parent.add_child(_earned_label)
 	Global.total_earned_changed.connect(func(amount: int):
 		if is_instance_valid(_earned_label):
 			_earned_label.text = "累计: %d" % amount
@@ -507,7 +513,7 @@ func _build_hud(ui: CanvasLayer, view_size: Vector2) -> void:
 	_fish_count_label.position = Vector2(view_size.x - 150, 15)
 	_fish_count_label.add_theme_font_size_override("font_size", 16)
 	_fish_count_label.modulate = Color(1, 1, 1, 0.9)
-	ui.add_child(_fish_count_label)
+	parent.add_child(_fish_count_label)
 
 	Global.fish_added.connect(_update_fish_count_display)
 	Global.fish_sold.connect(_update_fish_count_display)
@@ -520,11 +526,11 @@ func _build_hud(ui: CanvasLayer, view_size: Vector2) -> void:
 	menu_btn.position = Vector2(view_size.x - 60, 12)
 	menu_btn.size = Vector2(50, 26)
 	menu_btn.add_theme_font_size_override("font_size", 12)
-	ui.add_child(menu_btn)
+	parent.add_child(menu_btn)
 	menu_btn.pressed.connect(_toggle_game_menu)
 
 
-func _build_shop_panel(ui: CanvasLayer, view_size: Vector2) -> void:
+func _build_shop_panel(parent: Node, view_size: Vector2) -> void:
 	var shop_bg := ColorRect.new()
 	shop_bg.name = "ShopBg"
 	shop_bg.color = Color(0, 0, 0, 0.5)
@@ -532,14 +538,14 @@ func _build_shop_panel(ui: CanvasLayer, view_size: Vector2) -> void:
 	shop_bg.position = Vector2.ZERO
 	shop_bg.visible = false
 	shop_bg.mouse_filter = Control.MOUSE_FILTER_STOP
-	ui.add_child(shop_bg)
+	parent.add_child(shop_bg)
 
 	var shop_panel := Panel.new()
 	shop_panel.name = "ShopPanel"
 	shop_panel.size = Vector2(1000, 840)
 	shop_panel.position = Vector2(view_size.x / 2 - 500, view_size.y / 2 - 420)
 	shop_panel.visible = false
-	ui.add_child(shop_panel)
+	parent.add_child(shop_panel)
 
 	var shop_title := Label.new()
 	shop_title.text = "商店"
@@ -598,7 +604,7 @@ func _build_shop_panel(ui: CanvasLayer, view_size: Vector2) -> void:
 	tab_container.add_child(equip_tab)
 
 
-func _build_side_menu(ui: CanvasLayer, view_size: Vector2) -> void:
+func _build_side_menu(parent: Node, view_size: Vector2) -> void:
 	var buttons := [
 		{"text": "商店", "icon": "res://assets/ui/ui_shop.svg", "action": "shop"},
 		{"text": "喂食", "icon": "res://assets/ui/ui_food.svg", "action": "feed"},
@@ -627,7 +633,7 @@ func _build_side_menu(ui: CanvasLayer, view_size: Vector2) -> void:
 		btn.position = Vector2(btn_x, btn_y)
 		btn.size = Vector2(btn_width, btn_height)
 		btn.add_theme_font_size_override("font_size", 10)
-		ui.add_child(btn)
+		parent.add_child(btn)
 
 		if data.icon.is_empty():
 			# 壁纸按钮无图标，仅文字
@@ -703,9 +709,8 @@ func _enter_tiny_mode() -> void:
 	if _wallpaper_mode:
 		_exit_wallpaper_mode()
 		# 找到 tiny 按钮重置颜色
-		var ui := get_node_or_null("UI") as CanvasLayer
-		if ui:
-			var wallpaper_btn := ui.get_node_or_null("Btn_wallpaper") as Button
+		if is_instance_valid(_ui_container):
+			var wallpaper_btn := _ui_container.get_node_or_null("Btn_wallpaper") as Button
 			if wallpaper_btn:
 				wallpaper_btn.modulate = Color(1, 1, 1, 1)
 	
@@ -749,24 +754,17 @@ func _exit_tiny_mode() -> void:
 
 
 func _hide_all_ui() -> void:
-	var ui := get_node_or_null("UI") as CanvasLayer
-	if ui == null:
-		return
-	for child in ui.get_children():
-		if child is Button or child is Label or child is ColorRect or child is Panel:
-			child.visible = false
+	if is_instance_valid(_ui_container):
+		_ui_container.visible = false
 
 
 func _show_all_ui() -> void:
-	var ui := get_node_or_null("UI") as CanvasLayer
-	if ui == null:
+	if not is_instance_valid(_ui_container):
 		return
-	for child in ui.get_children():
-		if child is Button or child is Label or child is ColorRect or child is Panel:
-			child.visible = true
+	_ui_container.visible = true
 	# 按当前状态隐藏不应显示的面板
-	var shop_bg := ui.get_node_or_null("ShopBg") as ColorRect
-	var shop_panel_node := ui.get_node_or_null("ShopPanel") as Panel
+	var shop_bg := _ui_container.get_node_or_null("ShopBg") as ColorRect
+	var shop_panel_node := _ui_container.get_node_or_null("ShopPanel") as Panel
 	if shop_bg:
 		shop_bg.visible = shop_panel_open
 	if shop_panel_node:
@@ -777,10 +775,6 @@ func _show_all_ui() -> void:
 		_game_menu_panel.visible = _menu_open
 	if _game_menu_bg:
 		_game_menu_bg.visible = _menu_open
-	# 隐藏 Tiny 退出弹窗（如果有残留）
-	var popup := ui.get_node_or_null("TinyExitPopup") as Panel
-	if popup:
-		popup.visible = false
 
 
 func _show_tiny_exit_popup() -> void:
@@ -914,18 +908,16 @@ func _draw() -> void:
 
 
 func _on_tiny_exit_pressed() -> void:
-	var ui := get_node_or_null("UI") as CanvasLayer
-	if ui:
-		var tiny_btn := ui.get_node_or_null("Btn_tiny") as Button
+	if is_instance_valid(_ui_container):
+		var tiny_btn := _ui_container.get_node_or_null("Btn_tiny") as Button
 		if tiny_btn:
 			_exit_tiny_mode()
 			tiny_btn.modulate = Color(1, 1, 1, 1)
 
 
 func _on_wallpaper_exit_pressed() -> void:
-	var ui := get_node_or_null("UI") as CanvasLayer
-	if ui:
-		var wp_btn := ui.get_node_or_null("Btn_wallpaper") as Button
+	if is_instance_valid(_ui_container):
+		var wp_btn := _ui_container.get_node_or_null("Btn_wallpaper") as Button
 		if wp_btn:
 			_exit_wallpaper_mode()
 			wp_btn.modulate = Color(1, 1, 1, 1)
@@ -948,9 +940,8 @@ func _enter_wallpaper_mode() -> void:
 	
 	# 退出 tiny 模式（如果已激活）
 	if _tiny_mode:
-		var ui := get_node_or_null("UI") as CanvasLayer
-		if ui:
-			var tiny_btn := ui.get_node_or_null("Btn_tiny") as Button
+		if is_instance_valid(_ui_container):
+			var tiny_btn := _ui_container.get_node_or_null("Btn_tiny") as Button
 			if tiny_btn:
 				_exit_tiny_mode()
 				tiny_btn.modulate = Color(1, 1, 1, 1)
@@ -1060,9 +1051,9 @@ func toggle_shop() -> void:
 	if Global.decoration_placement_active:
 		return
 	shop_panel_open = not shop_panel_open
-	var ui := get_node("UI")
-	ui.get_node("ShopBg").visible = shop_panel_open
-	ui.get_node("ShopPanel").visible = shop_panel_open
+	if is_instance_valid(_ui_container):
+		_ui_container.get_node("ShopBg").visible = shop_panel_open
+		_ui_container.get_node("ShopPanel").visible = shop_panel_open
 
 	if shop_panel_open:
 		_refresh_shop_ui()
@@ -1524,12 +1515,12 @@ func do_upgrade() -> void:
 
 # ── Fish Info Panel ──────────────────────────────────────────────────────
 
-func _build_fish_info_panel(ui: CanvasLayer, _view_size: Vector2) -> void:
+func _build_fish_info_panel(parent: Node, _view_size: Vector2) -> void:
 	_fish_info_panel = Panel.new()
 	_fish_info_panel.name = "FishInfoPanel"
 	_fish_info_panel.size = Vector2(280, 180)
 	_fish_info_panel.visible = false
-	ui.add_child(_fish_info_panel)
+	parent.add_child(_fish_info_panel)
 
 	var margin := 8
 	var line_h := 20
@@ -1746,7 +1737,8 @@ var _auto_buy_settings_panel: Panel = null
 
 func _open_auto_buy_settings() -> void:
 	# 弹出自动买鱼设置界面
-	var ui := get_node("UI")
+	if not is_instance_valid(_ui_container):
+		return
 	
 	# 创建背景遮罩
 	var bg := ColorRect.new()
@@ -1760,13 +1752,13 @@ func _open_auto_buy_settings() -> void:
 		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 			_close_auto_buy_settings()
 	)
-	ui.add_child(bg)
+	_ui_container.add_child(bg)
 	
 	var panel := Panel.new()
 	panel.name = "AutoBuySettings"
 	panel.size = Vector2(400, 300)
 	panel.position = Vector2(get_viewport_rect().size.x / 2 - 200, get_viewport_rect().size.y / 2 - 150)
-	ui.add_child(panel)
+	_ui_container.add_child(panel)
 	_auto_buy_settings_panel = panel
 	
 	var title := Label.new()
@@ -1857,12 +1849,11 @@ func _open_auto_buy_settings() -> void:
 
 
 func _close_auto_buy_settings() -> void:
-	var ui := get_node_or_null("UI") as CanvasLayer
-	if ui:
-		var bg := ui.get_node_or_null("AutoBuySettingsBg")
+	if is_instance_valid(_ui_container):
+		var bg := _ui_container.get_node_or_null("AutoBuySettingsBg")
 		if bg:
 			bg.queue_free()
-		var panel := ui.get_node_or_null("AutoBuySettings")
+		var panel := _ui_container.get_node_or_null("AutoBuySettings")
 		if panel:
 			panel.queue_free()
 	_auto_buy_settings_panel = null
@@ -1973,7 +1964,7 @@ func _build_auto_feeder_settings_panel() -> VBoxContainer:
 
 # ── Game Menu ───────────────────────────────────────────────────────────
 
-func _build_game_menu(ui: CanvasLayer, view_size: Vector2) -> void:
+func _build_game_menu(parent: Node, view_size: Vector2) -> void:
 	_game_menu_bg = ColorRect.new()
 	_game_menu_bg.name = "GameMenuBg"
 	_game_menu_bg.color = Color(0, 0, 0, 0.4)
@@ -1981,7 +1972,7 @@ func _build_game_menu(ui: CanvasLayer, view_size: Vector2) -> void:
 	_game_menu_bg.position = Vector2.ZERO
 	_game_menu_bg.visible = false
 	_game_menu_bg.mouse_filter = Control.MOUSE_FILTER_STOP
-	ui.add_child(_game_menu_bg)
+	parent.add_child(_game_menu_bg)
 	# Clicking bg closes menu
 	_game_menu_bg.gui_input.connect(_on_menu_bg_input)
 
@@ -1990,7 +1981,7 @@ func _build_game_menu(ui: CanvasLayer, view_size: Vector2) -> void:
 	_game_menu_panel.size = Vector2(220, 160)
 	_game_menu_panel.position = Vector2(view_size.x / 2 - 110, view_size.y / 2 - 80)
 	_game_menu_panel.visible = false
-	ui.add_child(_game_menu_panel)
+	parent.add_child(_game_menu_panel)
 
 	var title := Label.new()
 	title.text = "游戏菜单"
@@ -2043,14 +2034,14 @@ func _on_restart_pressed() -> void:
 
 # ── Timescale ────────────────────────────────────────────────────────────
 
-func _build_timescale_label(ui: CanvasLayer, view_size: Vector2) -> void:
+func _build_timescale_label(parent: Node, view_size: Vector2) -> void:
 	_timescale_label = Label.new()
 	_timescale_label.name = "TimescaleLabel"
 	_timescale_label.text = "x%.1f" % Engine.time_scale
 	_timescale_label.position = Vector2(view_size.x - 280, 15)
 	_timescale_label.add_theme_font_size_override("font_size", 16)
 	_timescale_label.modulate = Color(1, 1, 1, 0.9)
-	ui.add_child(_timescale_label)
+	parent.add_child(_timescale_label)
 
 	Global.game_loaded.connect(func():
 		if is_instance_valid(_timescale_label):

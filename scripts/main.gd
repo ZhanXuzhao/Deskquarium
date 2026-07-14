@@ -43,6 +43,12 @@ var _coin_label: Label
 var _earned_label: Label
 var _fish_count_label: Label
 
+var _wallpaper_mode: bool = false
+var _prev_window_mode: int = DisplayServer.WINDOW_MODE_WINDOWED
+var _prev_borderless: bool = false
+var _prev_window_pos: Vector2i = Vector2i.ZERO
+var _prev_window_size: Vector2i = Vector2i.ZERO
+
 # 装饰物放置模式
 var _placement_preview: Sprite2D = null
 var _placement_deco_type: int = -1
@@ -297,6 +303,7 @@ func _update_ui_positions() -> void:
 				{"action": "sell"},
 				{"action": "move"},
 				{"action": "upgrade"},
+				{"action": "wallpaper"},
 			]
 			var btn_count := buttons.size()
 			var btn_width := 70
@@ -480,6 +487,7 @@ func _build_side_menu(ui: CanvasLayer, view_size: Vector2) -> void:
 		{"text": "出售", "icon": "res://assets/ui/ui_sell.svg", "action": "sell"},
 		{"text": "移动", "icon": "res://assets/ui/ui_move.svg", "action": "move"},
 		{"text": "升级", "icon": "res://assets/ui/ui_star.svg", "action": "upgrade"},
+		{"text": "壁纸", "icon": "", "action": "wallpaper"},
 	]
 
 	var btn_count := buttons.size()
@@ -502,10 +510,14 @@ func _build_side_menu(ui: CanvasLayer, view_size: Vector2) -> void:
 		btn.add_theme_font_size_override("font_size", 10)
 		ui.add_child(btn)
 
-		var tex := load(data.icon) as Texture2D
-		if tex:
-			btn.icon = tex
-			btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		if data.icon.is_empty():
+			# 壁纸按钮无图标，仅文字
+			btn.add_theme_font_size_override("font_size", 11)
+		else:
+			var tex := load(data.icon) as Texture2D
+			if tex:
+				btn.icon = tex
+				btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 		match data.action:
 			"shop":
@@ -518,6 +530,8 @@ func _build_side_menu(ui: CanvasLayer, view_size: Vector2) -> void:
 				btn.pressed.connect(_toggle_move_mode.bind(btn))
 			"upgrade":
 				btn.pressed.connect(do_upgrade)
+			"wallpaper":
+				btn.pressed.connect(_toggle_wallpaper_mode.bind(btn))
 
 
 func _toggle_sell_mode(btn: Button) -> void:
@@ -542,6 +556,117 @@ func _toggle_move_mode(btn: Button) -> void:
 		if is_instance_valid(btn):
 			btn.modulate = Color(0.6, 1.0, 0.6) if active else Color(1, 1, 1, 1)
 	, CONNECT_ONE_SHOT)
+
+
+func _toggle_wallpaper_mode(btn: Button) -> void:
+	if not _wallpaper_mode:
+		_enter_wallpaper_mode()
+		btn.modulate = Color(0.6, 1.0, 0.8)
+	else:
+		_exit_wallpaper_mode()
+		btn.modulate = Color(1, 1, 1, 1)
+
+
+func _enter_wallpaper_mode() -> void:
+	_prev_window_mode = DisplayServer.window_get_mode()
+	_prev_borderless = DisplayServer.window_get_flag(DisplayServer.WINDOW_FLAG_BORDERLESS)
+	_prev_window_pos = DisplayServer.window_get_position()
+	_prev_window_size = DisplayServer.window_get_size()
+	
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
+	# 窗口最大化（不覆盖任务栏）
+	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
+	
+	# 在 Windows 上将窗口设为壁纸层（壁纸之上、图标之下）
+	if DisplayServer.get_name() == "Windows":
+		_set_window_as_wallpaper_windows()
+	
+	_wallpaper_mode = true
+
+
+func _exit_wallpaper_mode() -> void:
+	if DisplayServer.get_name() == "Windows":
+		_restore_window_parent_windows()
+	
+	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, _prev_borderless)
+	DisplayServer.window_set_mode(_prev_window_mode)
+	if _prev_window_pos != Vector2i.ZERO:
+		DisplayServer.window_set_position(_prev_window_pos)
+	if _prev_window_size != Vector2i.ZERO:
+		DisplayServer.window_set_size(_prev_window_size)
+	
+	_wallpaper_mode = false
+
+
+func _set_window_as_wallpaper_windows() -> void:
+	"""通过 PowerShell 调用 Win32 API，将游戏窗口设为桌面壁纸层子窗口（壁纸之上、图标之下）"""
+	var hwnd := DisplayServer.window_get_native_handle(DisplayServer.WINDOW_HANDLE)
+	if hwnd == 0:
+		return
+	
+	var ps_code := (
+		'Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class W {
+    [DllImport("user32.dll")] public static extern IntPtr FindWindow(string c, string w);
+    [DllImport("user32.dll")] public static extern IntPtr FindWindowEx(IntPtr p, IntPtr c, string cn, string wn);
+    [DllImport("user32.dll")] public static extern IntPtr SetParent(IntPtr c, IntPtr p);
+    [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr h, int x, int y, int w, int h, bool r);
+    [DllImport("user32.dll")] public static extern IntPtr SendMessageTimeout(IntPtr h, int m, IntPtr wp, IntPtr lp, uint f, uint t, out IntPtr r);
+    [DllImport("user32.dll")] public static extern IntPtr GetWindow(IntPtr h, int cmd);
+}
+"@
+Add-Type -AssemblyName System.Windows.Forms
+$hwnd=[IntPtr]' + str(hwnd) + '
+$progman=[W]::FindWindow("Progman",$null)
+# 发送 0x052C 让 Progman 将桌面图标分离到 WorkerW
+[W]::SendMessageTimeout($progman,0x052C,[IntPtr]::Zero,[IntPtr]::Zero,2,1000,[ref][IntPtr]::Zero)
+# 遍历 WorkerW，找到包含 SHELLDLL_DefView 的那个（桌面图标层）
+$workerW=[IntPtr]::Zero
+$wallpaperW=[IntPtr]::Zero
+while($true){
+    $workerW=[W]::FindWindowEx([IntPtr]::Zero,$workerW,"WorkerW",$null)
+    if($workerW -eq [IntPtr]::Zero){break}
+    $defView=[W]::FindWindowEx($workerW,[IntPtr]::Zero,"SHELLDLL_DefView",$null)
+    if($defView -ne [IntPtr]::Zero){
+        # 图标层的上一个 Z 序窗口就是壁纸层
+        $wallpaperW=[W]::GetWindow($workerW,3)  # GW_HWNDPREV = 3
+        if($wallpaperW -eq [IntPtr]::Zero){$wallpaperW=$progman}
+        break
+    }
+}
+if($wallpaperW -eq [IntPtr]::Zero){$wallpaperW=$progman}
+[W]::SetParent($hwnd,[IntPtr]::Zero)
+[W]::SetParent($hwnd,$wallpaperW)
+$w=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width
+$h=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height
+[W]::MoveWindow($hwnd,0,0,$w,$h,$true)
+'
+	)
+	
+	OS.execute("powershell", ["-NoProfile", "-NoLogo", "-Command", ps_code], [], true)
+
+
+func _restore_window_parent_windows() -> void:
+	"""将窗口父级设回桌面"""
+	var hwnd := DisplayServer.window_get_native_handle(DisplayServer.WINDOW_HANDLE)
+	if hwnd == 0:
+		return
+	
+	var ps_code := (
+		'Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class W {
+    [DllImport("user32.dll")] public static extern IntPtr SetParent(IntPtr c, IntPtr p);
+}
+"@
+[W]::SetParent([IntPtr]' + str(hwnd) + ',[IntPtr]::Zero)
+'
+	)
+	
+	OS.execute("powershell", ["-NoProfile", "-NoLogo", "-Command", ps_code], [], true)
 
 
 func toggle_shop() -> void:

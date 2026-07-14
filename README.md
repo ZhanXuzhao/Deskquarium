@@ -51,14 +51,14 @@ Deskquarium 是一款使用 Godot 4.6 引擎开发的桌面水族箱游戏。你
 ## 🚀 快速开始
 
 ### 下载与运行
-1. 从 [Releases](https://github.com/your-username/deskquarium/releases) 下载最新版本
+1. 从 [Releases](https://github.com/ZhanXuzhao/Deskquarium/releases) 下载最新版本
 2. 运行 `Deskquarium.exe`
 
 ### 从源码构建
 1. 安装 [Godot 4.6](https://godotengine.org/)
 2. 克隆本仓库：
    ```bash
-   git clone https://github.com/your-username/deskquarium.git
+   git clone https://github.com/ZhanXuzhao/deskquarium.git
    ```
 3. 在 Godot 中打开项目，点击「运行」即可
 

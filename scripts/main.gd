@@ -176,11 +176,12 @@ func _restore_fish_from_save() -> void:
 		return
 	
 	for fd in fish_data:
-		var species: int = fd.get("species", FishData.Species.GUPPY)
+		var dict: Dictionary = fd
+		var species: int = dict.get("species", FishData.Species.GUPPY)
 		var fish := _spawn_fish(species)
-		fish.level = fd.get("level", 0.0)
-		fish.hunger = fd.get("hunger", 1.0)
-		fish.position = Vector2(fd.get("x", 0.0), fd.get("y", 0.0))
+		fish.level = dict.get("level", 0.0)
+		fish.hunger = dict.get("hunger", 1.0)
+		fish.position = Vector2(dict.get("x", 0.0), dict.get("y", 0.0))
 
 
 func _spawn_fish(species: int) -> Node2D:
@@ -724,7 +725,7 @@ func _enter_tiny_mode() -> void:
 		DisplayServer.window_set_size(Vector2i(TINY_WIDTH, TINY_HEIGHT))
 		# 居中
 		var screen_center := DisplayServer.screen_get_size() / 2.0
-		DisplayServer.window_set_position(Vector2i(screen_center.x - TINY_WIDTH / 2.0, screen_center.y - TINY_HEIGHT / 2.0))
+		DisplayServer.window_set_position(Vector2i(int(screen_center.x - TINY_WIDTH / 2.0), int(screen_center.y - TINY_HEIGHT / 2.0)))
 	
 	_hide_all_ui()
 	
@@ -1312,7 +1313,7 @@ func _restore_decorations_from_save() -> void:
 	
 	for d in Global.owned_decorations:
 		if typeof(d) == TYPE_DICTIONARY:
-			var dict: Dictionary = d
+			var dict = d
 			var deco_type: int = dict.get("type", 0)
 			var pos := Vector2(dict.get("x", 0), dict.get("y", 0))
 			var deco_scale := Vector2(dict.get("scale_x", 0.5), dict.get("scale_y", 0.5))

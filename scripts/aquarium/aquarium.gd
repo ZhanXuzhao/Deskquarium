@@ -35,7 +35,6 @@ static func _get_deco_rect(deco: Sprite2D) -> Rect2:
 static func _get_handle_positions(deco: Sprite2D) -> Dictionary:
 	var rect := _get_deco_rect(deco)
 	var r := rect
-	var hs := HANDLE_SIZE
 	return {
 		"top_left":     Vector2(r.position.x, r.position.y),
 		"top_center":   Vector2(r.position.x + r.size.x / 2, r.position.y),
@@ -52,10 +51,10 @@ static func _get_handle_positions(deco: Sprite2D) -> Dictionary:
 static func _hit_test_handle(deco: Sprite2D, local_pos: Vector2) -> String:
 	var handles := _get_handle_positions(deco)
 	var threshold := HANDLE_HIT
-	for name in handles:
-		var hp: Vector2 = handles[name]
+	for handle_name in handles:
+		var hp: Vector2 = handles[handle_name]
 		if local_pos.distance_to(hp) <= threshold:
-			return name
+			return handle_name
 	return ""
 
 
@@ -251,7 +250,7 @@ func _process(_delta: float) -> void:
 	
 	if _deco_drag_type == "move":
 		var delta := mouse_global - _deco_drag_start_mouse_global
-		var new_pos := _deco_drag_start_pos + delta / Global.scale_factor
+		var new_pos: Vector2 = _deco_drag_start_pos + delta / Global.scale_factor
 		# 限制在鱼缸范围内
 		var margin := 10.0
 		new_pos.x = clampf(new_pos.x, margin, aquarium_rect.size.x - margin)
@@ -477,7 +476,7 @@ func _handle_decoration_input(deco: Sprite2D, event: InputEvent) -> void:
 
 
 func _on_decoration_added(deco_type: int) -> void:
-	var deco := Global.make_decoration_sprite(deco_type)
+	var deco: Sprite2D = Global.make_decoration_sprite(deco_type)
 	if deco == null:
 		return
 	var margin := 100.0

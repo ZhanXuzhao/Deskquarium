@@ -98,7 +98,7 @@ func _swim(delta: float) -> void:
 			for pellet in food_container.get_children():
 				if not is_instance_valid(pellet):
 					continue
-				var pellet_dist := global_position.distance_to(pellet.global_position)
+				var pellet_dist := position.distance_to(pellet.position)
 				if pellet_dist < nearest_dist:
 					nearest_dist = pellet_dist
 					nearest = pellet
@@ -107,15 +107,19 @@ func _swim(delta: float) -> void:
 				state = FishState.EATING
 				return
 	
-	var dist := global_position.distance_to(target_position)
+	var dist := position.distance_to(target_position)
 	if dist < 10.0:
 		pick_new_target()
 		return
 	
-	var dir_vec := (target_position - global_position).normalized()
+	var dir_vec := (target_position - position).normalized()
 	var speed := swim_speed * (0.8 + level * 0.4)
 	
-	global_position += dir_vec * speed * delta
+	position += dir_vec * speed * delta
+	# 限制鱼在边界内
+	var margin := 10.0
+	position.x = clampf(position.x, aquarium_rect.position.x + margin, aquarium_rect.position.x + aquarium_rect.size.x - margin)
+	position.y = clampf(position.y, aquarium_rect.position.y + margin, aquarium_rect.position.y + aquarium_rect.size.y - margin)
 	
 	direction = sign(dir_vec.x)
 	sprite.flip_h = direction < 0
@@ -127,16 +131,20 @@ func _eat(delta: float) -> void:
 		state = FishState.SWIMMING
 		return
 	
-	var dir_vec := (target_food.global_position - global_position).normalized()
+	var dir_vec := (target_food.position - position).normalized()
 	# Lower hunger = faster swimming when competing for food
 	var speed_factor := 1.0 + (1.0 - hunger) * 2.0
 	var speed := swim_speed * speed_factor
-	global_position += dir_vec * speed * delta
+	position += dir_vec * speed * delta
+	# 限制鱼在边界内
+	var margin := 10.0
+	position.x = clampf(position.x, aquarium_rect.position.x + margin, aquarium_rect.position.x + aquarium_rect.size.x - margin)
+	position.y = clampf(position.y, aquarium_rect.position.y + margin, aquarium_rect.position.y + aquarium_rect.size.y - margin)
 	
 	direction = sign(dir_vec.x)
 	sprite.flip_h = direction < 0
 	
-	var dist := global_position.distance_to(target_food.global_position)
+	var dist := position.distance_to(target_food.position)
 	if dist < 20.0:
 		_eat_food(target_food)
 

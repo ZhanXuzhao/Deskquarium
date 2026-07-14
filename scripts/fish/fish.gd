@@ -232,10 +232,19 @@ func feed() -> void:
 
 
 func set_food_target(food: Node2D) -> void:
-	if hunger < 90.0:
-		target_food = food
-		if state == FishState.SWIMMING:
-			state = FishState.EATING
+	if hunger >= 90.0:
+		return
+	
+	# 仅在新的食物距离更近时才切换目标，确保鱼优先选择最近的鱼食
+	if target_food != null and is_instance_valid(target_food):
+		var current_dist := position.distance_squared_to(target_food.position)
+		var new_dist := position.distance_squared_to(food.position)
+		if new_dist >= current_dist:
+			return
+	
+	target_food = food
+	if state == FishState.SWIMMING:
+		state = FishState.EATING
 
 
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:

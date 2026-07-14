@@ -16,9 +16,10 @@ enum FishState {
 
 var level: float = 0.0
 var _auto_sell_triggered: bool = false
-var hunger: float = 1.0:
+var hunger: float = 100.0:
 	set(value):
-		hunger = clampf(value, 0.0, 1.0)
+		var max_h := FishData.get_max_hunger(species)
+		hunger = clampf(value, 0.0, max_h)
 var state: FishState = FishState.SWIMMING
 var swim_speed: float = 60.0
 var target_position: Vector2
@@ -42,7 +43,8 @@ func _ready() -> void:
 	
 	_update_appearance()
 	pick_new_target()
-	hunger_timer.start(3.0)
+	hunger = FishData.get_max_hunger(species)
+	hunger_timer.start(20.0)
 	state_timer.start(2.0)
 	area.input_event.connect(_on_input_event)
 	area.mouse_entered.connect(_on_mouse_entered)
@@ -50,6 +52,10 @@ func _ready() -> void:
 	modulate.a = 0.0
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 1.0, 0.5)
+
+
+func _on_hunger_timeout() -> void:
+	hunger -= 1.0
 
 
 func _update_appearance() -> void:
@@ -88,7 +94,7 @@ func _swim(delta: float) -> void:
 		return
 	
 	# Look for food on the bottom when hungry
-	if hunger < 0.8:
+	if hunger < 90.0:
 		var food_container := get_parent().get_parent().get_node_or_null("FoodContainer") as Node2D
 		if food_container and food_container.get_child_count() > 0:
 			var nearest: Node2D = null
@@ -131,7 +137,8 @@ func _eat(delta: float) -> void:
 	
 	var dir_vec := (target_food.position - position).normalized()
 	# Lower hunger = faster swimming when competing for food
-	var speed_factor := 1.0 + (1.0 - hunger) * 2.0
+	var max_h := FishData.get_max_hunger(species)
+	var speed_factor := 1.0 + (1.0 - hunger / max_h) * 2.0
 	var speed := swim_speed * speed_factor
 	position += dir_vec * speed * delta
 	# 限制鱼在边界内
@@ -148,9 +155,9 @@ func _eat(delta: float) -> void:
 
 
 func _eat_food(food: Node2D) -> void:
-	hunger = min(1.0, hunger + 0.3)
+	hunger += 10.0
 	# Growth only happens when satiety >= 50%
-	if hunger >= 0.5:
+	if hunger >= FishData.get_max_hunger(species) * 0.5:
 		level = min(1.0, level + FishData.get_growth_rate(species))
 		_check_auto_sell()
 	
@@ -217,15 +224,15 @@ func get_sellable() -> bool:
 
 
 func feed() -> void:
-	hunger = min(1.0, hunger + 0.15)
+	hunger += 10.0
 	# Growth only happens when satiety >= 50%
-	if hunger >= 0.5:
+	if hunger >= FishData.get_max_hunger(species) * 0.5:
 		level = min(1.0, level + FishData.get_growth_rate(species) * 0.5)
 		_check_auto_sell()
 
 
 func set_food_target(food: Node2D) -> void:
-	if hunger < 0.8:
+	if hunger < 90.0:
 		target_food = food
 		if state == FishState.SWIMMING:
 			state = FishState.EATING
@@ -301,12 +308,6 @@ func _auto_sell() -> void:
 
 func _sell_fish() -> void:
 	sell()
-
-
-func _on_hunger_timeout() -> void:
-	if state == FishState.DEAD:
-		return
-	hunger -= 0.02
 
 
 func _on_state_timeout() -> void:

@@ -69,6 +69,8 @@ func _update_appearance() -> void:
 
 
 func _process(delta: float) -> void:
+	_update_depth_layer()
+	
 	match state:
 		FishState.SWIMMING:
 			_swim(delta)
@@ -165,6 +167,34 @@ func pick_new_target() -> void:
 
 func set_aquarium_bounds(rect: Rect2) -> void:
 	aquarium_rect = rect
+
+
+# ── 动态深度层级 ──────────────────────────────────────────────────────────
+# 根据鱼的 Y 坐标动态更新 z_index，范围 [0, max(装饰 z_index) + 1]，
+# 使鱼游动时自然地在装饰物前后穿插。
+
+func _update_depth_layer() -> void:
+	var fish_container := get_parent() as Node2D
+	if fish_container == null:
+		return
+	var aquarium := fish_container.get_parent() as Node2D
+	if aquarium == null:
+		return
+	var deco_container := aquarium.get_node_or_null("DecorationContainer") as Node2D
+	if deco_container == null:
+		return
+	
+	# 查找所有装饰物的最大 z_index
+	var max_deco_z := 0
+	for deco in deco_container.get_children():
+		if deco is Sprite2D:
+			max_deco_z = max(max_deco_z, deco.z_index)
+	
+	# 将鱼在鱼缸中的 Y 坐标映射到 z_index 范围
+	# Y 越大（越靠下）→ z_index 越高（显示在前面）
+	var t := inverse_lerp(0.0, Global.DESIGN_HEIGHT, position.y)
+	t = clampf(t, 0.0, 1.0)
+	z_index = int(lerp(0.0, float(max_deco_z + 1), t))
 
 
 func get_level() -> int:

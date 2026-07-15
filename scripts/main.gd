@@ -1574,7 +1574,7 @@ func _place_food_at_mouse() -> void:
 	
 	var margin := 20.0
 	var clamped_x := clampf(local_pos.x, margin, aquarium_bounds.size.x - margin)
-	var clamped_y := clampf(local_pos.y, aquarium_bounds.size.y * 0.3, aquarium_bounds.size.y - margin)
+	var clamped_y := clampf(local_pos.y, margin, aquarium_bounds.size.y - margin)
 	
 	var pellet_scene := preload("res://scenes/food/food_pellet.tscn")
 	var pellet_script := preload("res://scripts/food/food_pellet.gd")

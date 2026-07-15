@@ -38,6 +38,7 @@ var direction: float = 1.0
 
 var aquarium_rect: Rect2 = Rect2(50, 50, 700, 450)
 var target_food: Node2D = null
+var _eating_food: bool = false
 
 
 func _ready() -> void:
@@ -125,6 +126,8 @@ func _swim(delta: float) -> void:
 			for pellet in food_container.get_children():
 				if not is_instance_valid(pellet):
 					continue
+				if pellet is FoodPellet and pellet.consumed:
+					continue
 				var pellet_dist := position.distance_to(pellet.position)
 				if pellet_dist < nearest_dist:
 					nearest_dist = pellet_dist
@@ -158,7 +161,17 @@ func _eat(delta: float) -> void:
 		state = FishState.SWIMMING
 		return
 	
-	var dir_vec := (target_food.position - position).normalized()
+	# 计算鱼头偏移：使鱼头（而非鱼身中心）靠近食物
+	var head_offset := 20.0
+	if sprite and sprite.texture:
+		head_offset = sprite.texture.get_width() * sprite.scale.x * 0.45
+	
+	# 根据靠近方向调整目标位置，让鱼头抵达食物位置
+	var approach_dir: float = sign(target_food.position.x - position.x)
+	var target_pos := target_food.position
+	target_pos.x -= approach_dir * head_offset
+	
+	var dir_vec := (target_pos - position).normalized()
 	# Lower hunger = faster swimming when competing for food
 	var max_h := FishData.get_max_hunger(species)
 	var speed_factor := 1.0 + (1.0 - hunger / max_h) * 2.0
@@ -169,15 +182,21 @@ func _eat(delta: float) -> void:
 	position.x = clampf(position.x, aquarium_rect.position.x + margin, aquarium_rect.position.x + aquarium_rect.size.x - margin)
 	position.y = clampf(position.y, aquarium_rect.position.y + margin, aquarium_rect.position.y + aquarium_rect.size.y - margin)
 	
-	direction = sign(dir_vec.x)
+	# 吃食期间固定朝向食物方向，避免反复转向
+	direction = approach_dir
 	sprite.flip_h = direction < 0
 	
-	var dist := position.distance_to(target_food.position)
-	if dist < 20.0:
+	# 正在吃食中则等待动画结束
+	if _eating_food:
+		return
+	
+	var dist := position.distance_to(target_pos)
+	if dist < 20.0 and not (target_food is FoodPellet and target_food.consumed):
 		_eat_food(target_food)
 
 
 func _eat_food(food: Node2D) -> void:
+	_eating_food = true
 	hunger += 10.0
 	# Growth only happens when satiety >= 50%
 	if hunger >= FishData.get_max_hunger(species) * 0.5:
@@ -187,9 +206,14 @@ func _eat_food(food: Node2D) -> void:
 	if food.has_method("consume"):
 		food.consume()
 	
+	# 等待1秒吃食动画（食物震动）
+	await get_tree().create_timer(1.0).timeout
+	
 	target_food = null
 	state = FishState.SWIMMING
 	pick_new_target()
+	
+	_eating_food = false
 	
 	Global.earn(0)
 
@@ -270,6 +294,9 @@ func feed() -> void:
 
 func set_food_target(food: Node2D) -> void:
 	if hunger >= 90.0:
+		return
+	
+	if food is FoodPellet and food.consumed:
 		return
 	
 	# 仅在新的食物距离更近时才切换目标，确保鱼优先选择最近的鱼食

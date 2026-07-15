@@ -6,6 +6,7 @@ var sink_speed: float = 30.0
 var lifetime: float = 300.0
 var elapsed: float = 0.0
 var bottom_y: float = INF
+var consumed: bool = false
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var collision_shape: CollisionShape2D = $CollisionShape2D
@@ -45,9 +46,20 @@ func _on_body_entered(_body: Node2D) -> void:
 
 
 func consume() -> void:
+	if consumed:
+		return
+	consumed = true
 	collision_shape.set_deferred("disabled", true)
+	
 	var tween := create_tween()
-	tween.tween_property(sprite, "scale", Vector2.ZERO, 0.2)
+	var orig_pos := position
+	# 震动（幅度3px，每步0.2s，持续约1秒）
+	for i in range(2):
+		tween.tween_property(self, "position:x", orig_pos.x + 3.0, 0.2)
+		tween.tween_property(self, "position:x", orig_pos.x - 3.0, 0.2)
+	tween.tween_property(self, "position:x", orig_pos.x, 0.04)
+	# 淡出消失
+	tween.tween_property(sprite, "modulate:a", 0.0, 0.16)
 	tween.tween_callback(queue_free)
 
 

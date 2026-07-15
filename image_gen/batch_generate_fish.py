@@ -47,10 +47,32 @@ STEPS = 8
 
 # 可以从 fish_data.gd 或 doc/fish.md 中提取
 # 格式：(中文名, 英文名, 学名/补充描述)
+# 鱼列表：doc/fish.md 20 种 + 游戏中已有的金鱼、龙鱼
+# 格式：(中文名, 英文名, 学名/补充描述)
 FISH_LIST = [
+    # --- doc/fish.md ---
+    ("红绿灯鱼", "NeonTetra", "Paracheirodon innesi, bright blue and red stripe, tiny 3cm"),
+    ("宝莲灯鱼", "CardinalTetra", "Paracheirodon axelrodi, red belly, bright blue line, 4cm"),
+    ("斑马鱼", "Zebrafish", "Danio rerio, striped body, small slender fish, 4-6cm"),
     ("孔雀鱼", "Guppy", "Poecilia reticulata, colorful tail, small tropical fish"),
+    ("玛丽鱼", "Molly", "Poecilia latipinna, round body, various colors, 7-10cm"),
+    ("米奇鱼", "MickeyMousePlaty", "Poecilia hybrid, Mickey Mouse pattern on tail fin"),
+    ("红鼻剪刀", "RummynoseTetra", "Rasbora heteromorpha, red nose, silver body, 5-6cm"),
+    ("三角灯鱼", "HarlequinRasbora", "Trigonostigma heteromorpha, triangular black patch, 4-5cm"),
+    ("虎皮鱼", "TigerBarb", "Puntigrus tetrazona, striped tiger-like pattern, 6-7cm"),
+    ("曼龙鱼", "Gourami", "Trichopodus trichopterus, large fins, labyrinth fish, 10-14cm"),
+    ("珍珠马甲", "PearlGourami", "Trichopodus leerii, pearl-like spots on body, 10-12cm"),
+    ("清道夫", "Plecostomus", "Hypostomus plecostomus, sucker mouth, bottom dweller, 30cm"),
+    ("小精灵鱼", "Otocinclus", "Otocinclus affinis, tiny algae eater, 4-5cm"),
+    ("黄金大胡子", "BristlenosePleco", "Ancistrus sp., bristle nose, golden color, 12-15cm"),
+    ("神仙鱼", "Angelfish", "Pterophyllum scalare, triangular body, long fins, 12-15cm"),
+    ("七彩神仙鱼", "Discus", "Symphysodon aequifasciatus, disc-shaped, colorful, 15-20cm"),
+    ("鼠鱼", "Corydoras", "Corydoras paleatus, bottom feeder, armored catfish, 5-6cm"),
+    ("斗鱼", "Betta", "Betta splendens, large flowing fins, vibrant colors, 5-7cm"),
+    ("月光鱼", "Moonfish", "Xiphophorus maculatus, small peaceful livebearer, 4-5cm"),
+    ("红十字鱼", "SerpaeTetra", "Hyphessobrycon eques, red body, black spot, 5-7cm"),
+    # --- 游戏中已有（不在 fish.md 中）---
     ("金鱼", "Goldfish", "Carassius auratus, round chubby body, fancy tail"),
-    ("神仙鱼", "Angelfish", "Pterophyllum scalare, triangular body, long fins"),
     ("龙鱼", "Arowana", "Scleropages formosus, long sleek body, large scales"),
 ]
 

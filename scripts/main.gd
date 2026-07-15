@@ -320,6 +320,16 @@ func _input(event: InputEvent) -> void:
 		
 		# Tiny 模式：拖拽/缩放 + 右键弹窗
 		
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed and _tiny_mode and event.double_click:
+			# 双击直接退出 Tiny 模式
+			_exit_tiny_mode()
+			if is_instance_valid(_ui_container):
+				var tiny_btn := _ui_container.get_node_or_null("Btn_tiny") as Button
+				if tiny_btn:
+					tiny_btn.modulate = Color(1, 1, 1, 1)
+			get_viewport().set_input_as_handled()
+			return
+		
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			# 如果弹出菜单可见
 			if _tiny_exit_popup and is_instance_valid(_tiny_exit_popup) and _tiny_exit_popup.visible:

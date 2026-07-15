@@ -9,7 +9,7 @@
 Deskquarium 是一款使用 Godot 4.6 引擎开发的桌面水族箱游戏。你可以在桌面上养鱼、喂食、装饰鱼缸，甚至可以把它设置为桌面壁纸，让鱼儿在图标下游动。
 
 ![Deskquarium 截图](assets/screenshoot/screenshoot_1.png)
-
+![Deskquarium 截图](assets/screenshoot/screenshoot_2.png)
 ## 🎮 功能特性
 
 ### 🐟 鱼类系统

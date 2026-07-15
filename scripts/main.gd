@@ -53,42 +53,7 @@ var _coin_label: Label
 var _earned_label: Label
 var _fish_count_label: Label
 
-var _wallpaper_mode: bool = false
-var _tiny_mode: bool = false
-var _prev_window_mode: int = DisplayServer.WINDOW_MODE_WINDOWED
-var _prev_borderless: bool = false
-var _prev_window_pos: Vector2i = Vector2i.ZERO
-var _prev_window_size: Vector2i = Vector2i.ZERO
-var _prev_always_on_top: bool = false
-
-var _tiny_exit_popup: Panel = null
-
-# Tiny 模式窗口拖拽/缩放
-var _drag_active: bool = false
-var _drag_start_mouse: Vector2i = Vector2i.ZERO
-var _drag_start_window: Vector2i = Vector2i.ZERO
-var _resize_active: bool = false
-var _resize_start_mouse: Vector2i = Vector2i.ZERO
-var _resize_start_size: Vector2i = Vector2i.ZERO
-var _resize_start_pos: Vector2i = Vector2i.ZERO
-var _resize_edges: int = 0
-
-const EDGE_LEFT := 1
-const EDGE_RIGHT := 2
-const EDGE_TOP := 4
-const EDGE_BOTTOM := 8
-const RESIZE_HANDLE_SIZE := 20
-const MIN_WINDOW_WIDTH := 100
-const MIN_WINDOW_HEIGHT := 50
-
-# Tiny 模式边缘高亮
-var _tiny_near_left: bool = false
-var _tiny_near_right: bool = false
-var _tiny_near_top: bool = false
-var _tiny_near_bottom: bool = false
-
-const EDGE_HIGHLIGHT_COLOR := Color(1.0, 1.0, 0.3, 0.5)
-const EDGE_HIGHLIGHT_THICKNESS := 20.0
+var _window_manager: WindowManager = null
 
 # 装饰物放置模式
 var _placement_preview: Sprite2D = null
@@ -112,14 +77,23 @@ func _ready() -> void:
 
 	_setup_background_layer()
 	_setup_ui()
+	
+	# 初始化 WindowManager
+	var wm := WindowManager.new()
+	wm.name = "WindowManager"
+	add_child(wm)
+	_window_manager = wm
+	_window_manager.ui_container = _ui_container
+	_window_manager.ui_layer = $UI
+	_window_manager.aquarium_scale_needed.connect(_update_aquarium_scale)
+	_window_manager.redraw_requested.connect(queue_redraw)
+	_window_manager.after_ui_shown.connect(_on_window_mode_ui_shown)
 
-	# 初始缩放（在 UI 构建之后，确保 viewport 已有效）
+	# 初始缩放
 	call_deferred(&"_update_aquarium_scale")
 
 	SaveManager.load_game()
 	_restore_fish_from_save()
-	# 装饰物和设备的恢复由 _on_game_loaded 信号处理
-	# 等待一帧确保 UI 和 viewport 就绪后，按启动模式设置
 	call_deferred(&"_apply_startup_mode")
 
 
@@ -243,9 +217,7 @@ func _process(_delta: float) -> void:
 	if Global.decoration_placement_active:
 		_update_placement_preview()
 	
-	if _tiny_mode:
-		_update_tiny_window()
-		_update_resize_cursor()
+	_window_manager.handle_process(_delta)
 	
 	if _feed_mode and _feed_holding:
 		_feed_hold_time += _delta
@@ -256,10 +228,7 @@ func _process(_delta: float) -> void:
 
 func _handle_input() -> void:
 	if Input.is_action_just_pressed("ui_cancel"):
-		if (_tiny_mode or _wallpaper_mode) and _tiny_exit_popup and _tiny_exit_popup.visible:
-			_close_tiny_exit_popup()
-			return
-		if _tiny_mode or _wallpaper_mode:
+		if _window_manager.handle_cancel():
 			return
 		if _auto_buy_settings_panel and is_instance_valid(_auto_buy_settings_panel):
 			_close_auto_buy_settings()
@@ -302,93 +271,9 @@ func _handle_input() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if (_tiny_mode or _wallpaper_mode) and event is InputEventMouseButton:
-		var view_size := get_viewport_rect().size
-		var mouse_pos := get_viewport().get_mouse_position()
-		
-		# 壁纸模式：仅拦截点击 + 右键弹窗 + 双击退出（无拖拽缩放）
-		if _wallpaper_mode:
-			if event.button_index == MOUSE_BUTTON_LEFT:
-				if _tiny_exit_popup and is_instance_valid(_tiny_exit_popup) and _tiny_exit_popup.visible:
-					var popup_rect := Rect2(_tiny_exit_popup.position, _tiny_exit_popup.size)
-					if popup_rect.has_point(mouse_pos):
-						return
-					else:
-						_close_tiny_exit_popup()
-				if event.double_click:
-					_exit_wallpaper_mode()
-					if is_instance_valid(_ui_container):
-						var wallpaper_btn := _ui_container.get_node_or_null("Btn_wallpaper") as Button
-						if wallpaper_btn:
-							wallpaper_btn.modulate = Color(1, 1, 1, 1)
-					get_viewport().set_input_as_handled()
-					return
-				get_viewport().set_input_as_handled()
-				return
-			if event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
-				_show_tiny_exit_popup()
-				get_viewport().set_input_as_handled()
-				return
-		
-		# Tiny 模式：拖拽/缩放 + 右键弹窗
-		
-		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed and _tiny_mode and event.double_click:
-			# 双击直接退出 Tiny 模式
-			_exit_tiny_mode()
-			if is_instance_valid(_ui_container):
-				var tiny_btn := _ui_container.get_node_or_null("Btn_tiny") as Button
-				if tiny_btn:
-					tiny_btn.modulate = Color(1, 1, 1, 1)
-			get_viewport().set_input_as_handled()
-			return
-		
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			# 如果弹出菜单可见
-			if _tiny_exit_popup and is_instance_valid(_tiny_exit_popup) and _tiny_exit_popup.visible:
-				var popup_rect := Rect2(_tiny_exit_popup.position, _tiny_exit_popup.size)
-				if popup_rect.has_point(mouse_pos):
-					return  # 点击在菜单内，放行让按钮处理
-				else:
-					_close_tiny_exit_popup()  # 点击菜单外，关闭菜单
-					# 不返回，继续走拖拽/缩放逻辑
-			
-			if event.pressed:
-				# 检测鼠标靠近哪个窗口边缘
-				_resize_edges = 0
-				if mouse_pos.x <= RESIZE_HANDLE_SIZE:
-					_resize_edges |= EDGE_LEFT
-				if mouse_pos.x >= view_size.x - RESIZE_HANDLE_SIZE:
-					_resize_edges |= EDGE_RIGHT
-				if mouse_pos.y <= RESIZE_HANDLE_SIZE:
-					_resize_edges |= EDGE_TOP
-				if mouse_pos.y >= view_size.y - RESIZE_HANDLE_SIZE:
-					_resize_edges |= EDGE_BOTTOM
-				
-				if _resize_edges != 0:
-					# 边缘缩放
-					_resize_active = true
-					_resize_start_mouse = DisplayServer.mouse_get_position()
-					_resize_start_size = DisplayServer.window_get_size()
-					_resize_start_pos = DisplayServer.window_get_position()
-				else:
-					# 整个窗口拖拽移动
-					_drag_active = true
-					_drag_start_mouse = DisplayServer.mouse_get_position()
-					_drag_start_window = DisplayServer.window_get_position()
-				
-				get_viewport().set_input_as_handled()
-				return
-			else:
-				# 释放鼠标
-				_drag_active = false
-				_resize_active = false
-				_resize_edges = 0
-				Input.set_custom_mouse_cursor(null)
-		
-		if event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
-			_show_tiny_exit_popup()
-			get_viewport().set_input_as_handled()
-			return
+	# 窗口模式输入由 WindowManager 处理
+	if _window_manager.handle_input(event):
+		return
 	
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		if Global.sell_mode:
@@ -737,372 +622,16 @@ func _toggle_move_mode(btn: Button) -> void:
 
 
 func _toggle_tiny_mode(btn: Button) -> void:
-	if not _tiny_mode:
-		_enter_tiny_mode()
-		btn.modulate = Color(0.8, 0.6, 1.0)
-	else:
-		_exit_tiny_mode()
-		btn.modulate = Color(1, 1, 1, 1)
-
-
-const TINY_WIDTH := 400
-const TINY_HEIGHT := 200
-
-
-func _enter_tiny_mode() -> void:
-	_prev_window_mode = DisplayServer.window_get_mode()
-	_prev_borderless = DisplayServer.window_get_flag(DisplayServer.WINDOW_FLAG_BORDERLESS)
-	_prev_window_pos = DisplayServer.window_get_position()
-	_prev_window_size = DisplayServer.window_get_size()
-	_prev_always_on_top = DisplayServer.window_get_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP)
-	
-	# 退出壁纸模式（如果已激活）
-	if _wallpaper_mode:
-		_exit_wallpaper_mode()
-		# 找到 tiny 按钮重置颜色
-		if is_instance_valid(_ui_container):
-			var wallpaper_btn := _ui_container.get_node_or_null("Btn_wallpaper") as Button
-			if wallpaper_btn:
-				wallpaper_btn.modulate = Color(1, 1, 1, 1)
-	
-	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
-	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP, true)
-	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-	
-	# 优先使用存档中或上次退出 Tiny 模式时的尺寸和位置
-	if Global.tiny_window_size != Vector2i.ZERO:
-		DisplayServer.window_set_size(Global.tiny_window_size)
-		DisplayServer.window_set_position(Global.tiny_window_pos)
-	else:
-		DisplayServer.window_set_size(Vector2i(TINY_WIDTH, TINY_HEIGHT))
-		# 居中
-		var screen_center := DisplayServer.screen_get_size() / 2.0
-		DisplayServer.window_set_position(Vector2i(int(screen_center.x - TINY_WIDTH / 2.0), int(screen_center.y - TINY_HEIGHT / 2.0)))
-	
-	_hide_all_ui()
-	
-	# 显式更新 Aquarium 缩放和鱼边界（确保 viewport 已更新）
-	_update_aquarium_scale()
-	
-	_tiny_mode = true
-
-
-func _exit_tiny_mode() -> void:
-	# 记录当前 Tiny 窗口尺寸/位置，供下次进入时复用（也会通过 Global 存档）
-	Global.tiny_window_size = DisplayServer.window_get_size()
-	Global.tiny_window_pos = DisplayServer.window_get_position()
-
-	_drag_active = false
-	_resize_active = false
-	Input.set_custom_mouse_cursor(null)
-	_tiny_near_left = false
-	_tiny_near_right = false
-	_tiny_near_top = false
-	_tiny_near_bottom = false
-	queue_redraw()
-	_close_tiny_exit_popup()
-	_show_all_ui()
-	
-	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, _prev_borderless)
-	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP, _prev_always_on_top)
-	DisplayServer.window_set_mode(_prev_window_mode)
-	if _prev_window_pos != Vector2i.ZERO:
-		DisplayServer.window_set_position(_prev_window_pos)
-	if _prev_window_size != Vector2i.ZERO:
-		DisplayServer.window_set_size(_prev_window_size)
-	
-	_tiny_mode = false
-
-
-func _hide_all_ui() -> void:
-	if is_instance_valid(_ui_container):
-		_ui_container.visible = false
-
-
-func _show_all_ui() -> void:
-	if not is_instance_valid(_ui_container):
-		return
-	_ui_container.visible = true
-	# 按当前状态隐藏不应显示的面板
-	var shop_panel_node := _ui_container.get_node_or_null("ShopPanel") as Panel
-	if shop_panel_node:
-		shop_panel_node.visible = shop_panel_open
-	if _fish_info_panel:
-		_fish_info_panel.visible = _selected_fish != null and is_instance_valid(_selected_fish)
-	if _game_menu_panel:
-		_game_menu_panel.visible = _menu_open
-	if _game_menu_bg:
-		_game_menu_bg.visible = _menu_open
-
-
-func _show_tiny_exit_popup() -> void:
-	if _tiny_exit_popup and _tiny_exit_popup.visible:
-		return
-	_close_tiny_exit_popup()
-	
-	var ui := get_node_or_null("UI") as CanvasLayer
-	if ui == null:
-		return
-	
-	var mode_name := "壁纸" if _wallpaper_mode else "Tiny"
-	
-	var popup := Panel.new()
-	popup.name = "TinyExitPopup"
-	popup.size = Vector2(200, 130)
-	var view_size := get_viewport_rect().size
-	popup.position = Vector2(view_size.x / 2 - 100, view_size.y / 2 - 65)
-	ui.add_child(popup)
-	_tiny_exit_popup = popup
-	
-	var label := Label.new()
-	label.text = mode_name + " 模式"
-	label.position = Vector2(12, 12)
-	label.add_theme_font_size_override("font_size", 14)
-	popup.add_child(label)
-	
-	var exit_btn := Button.new()
-	exit_btn.text = "退出 " + mode_name + " 模式"
-	exit_btn.position = Vector2(20, 45)
-	exit_btn.size = Vector2(160, 30)
-	popup.add_child(exit_btn)
-	if _wallpaper_mode:
-		exit_btn.pressed.connect(_on_wallpaper_exit_pressed)
-	else:
-		exit_btn.pressed.connect(_on_tiny_exit_pressed)
-	
-	var cancel_btn := Button.new()
-	cancel_btn.text = "取消"
-	cancel_btn.position = Vector2(20, 85)
-	cancel_btn.size = Vector2(160, 28)
-	popup.add_child(cancel_btn)
-	cancel_btn.pressed.connect(_close_tiny_exit_popup)
-
-
-func _close_tiny_exit_popup() -> void:
-	if _tiny_exit_popup and is_instance_valid(_tiny_exit_popup):
-		_tiny_exit_popup.queue_free()
-	_tiny_exit_popup = null
-
-
-func _update_tiny_window() -> void:
-	if _drag_active:
-		var current_mouse := DisplayServer.mouse_get_position()
-		var delta := current_mouse - _drag_start_mouse
-		DisplayServer.window_set_position(_drag_start_window + delta)
-	
-	if _resize_active:
-		var current_mouse := DisplayServer.mouse_get_position()
-		var delta := current_mouse - _resize_start_mouse
-		var new_size := _resize_start_size
-		var new_pos := _resize_start_pos
-		
-		if _resize_edges & EDGE_RIGHT:
-			new_size.x = maxi(_resize_start_size.x + delta.x, MIN_WINDOW_WIDTH)
-		if _resize_edges & EDGE_LEFT:
-			var nw := maxi(_resize_start_size.x - delta.x, MIN_WINDOW_WIDTH)
-			new_pos.x = _resize_start_pos.x + (_resize_start_size.x - nw)
-			new_size.x = nw
-		if _resize_edges & EDGE_BOTTOM:
-			new_size.y = maxi(_resize_start_size.y + delta.y, MIN_WINDOW_HEIGHT)
-		if _resize_edges & EDGE_TOP:
-			var nh := maxi(_resize_start_size.y - delta.y, MIN_WINDOW_HEIGHT)
-			new_pos.y = _resize_start_pos.y + (_resize_start_size.y - nh)
-			new_size.y = nh
-		
-		DisplayServer.window_set_position(new_pos)
-		DisplayServer.window_set_size(new_size)
-
-
-func _update_resize_cursor() -> void:
-	if _resize_active:
-		return
-	var mouse_pos := get_viewport().get_mouse_position()
-	var view_size := get_viewport_rect().size
-	
-	# 鼠标在窗口外时不显示高亮
-	var mouse_inside := mouse_pos.x >= 0 and mouse_pos.x < view_size.x and mouse_pos.y >= 0 and mouse_pos.y < view_size.y
-	
-	var near_left := mouse_inside and mouse_pos.x <= RESIZE_HANDLE_SIZE
-	var near_right := mouse_inside and mouse_pos.x >= view_size.x - RESIZE_HANDLE_SIZE
-	var near_top := mouse_inside and mouse_pos.y <= RESIZE_HANDLE_SIZE
-	var near_bottom := mouse_inside and mouse_pos.y >= view_size.y - RESIZE_HANDLE_SIZE
-	
-	# 更新边缘高亮状态并触发重绘
-	if near_left != _tiny_near_left or near_right != _tiny_near_right or near_top != _tiny_near_top or near_bottom != _tiny_near_bottom:
-		_tiny_near_left = near_left
-		_tiny_near_right = near_right
-		_tiny_near_top = near_top
-		_tiny_near_bottom = near_bottom
-		queue_redraw()
-	
-	if near_left and near_top:
-		Input.set_custom_mouse_cursor(null, Input.CURSOR_CROSS)
-	elif near_right and near_bottom:
-		Input.set_custom_mouse_cursor(null, Input.CURSOR_CROSS)
-	elif near_left and near_bottom:
-		Input.set_custom_mouse_cursor(null, Input.CURSOR_CROSS)
-	elif near_right and near_top:
-		Input.set_custom_mouse_cursor(null, Input.CURSOR_CROSS)
-	elif near_left or near_right:
-		Input.set_custom_mouse_cursor(null, Input.CURSOR_HSPLIT)
-	elif near_top or near_bottom:
-		Input.set_custom_mouse_cursor(null, Input.CURSOR_VSPLIT)
-	else:
-		Input.set_custom_mouse_cursor(null, Input.CURSOR_MOVE)
+	_window_manager.toggle_tiny(btn)
 
 
 func _draw() -> void:
-	if not _tiny_mode:
-		return
-	var view_size := get_viewport_rect().size
-	if _tiny_near_left:
-		draw_rect(Rect2(0, 0, EDGE_HIGHLIGHT_THICKNESS, view_size.y), EDGE_HIGHLIGHT_COLOR)
-	if _tiny_near_right:
-		draw_rect(Rect2(view_size.x - EDGE_HIGHLIGHT_THICKNESS, 0, EDGE_HIGHLIGHT_THICKNESS, view_size.y), EDGE_HIGHLIGHT_COLOR)
-	if _tiny_near_top:
-		draw_rect(Rect2(0, 0, view_size.x, EDGE_HIGHLIGHT_THICKNESS), EDGE_HIGHLIGHT_COLOR)
-	if _tiny_near_bottom:
-		draw_rect(Rect2(0, view_size.y - EDGE_HIGHLIGHT_THICKNESS, view_size.x, EDGE_HIGHLIGHT_THICKNESS), EDGE_HIGHLIGHT_COLOR)
-
-
-func _on_tiny_exit_pressed() -> void:
-	if is_instance_valid(_ui_container):
-		var tiny_btn := _ui_container.get_node_or_null("Btn_tiny") as Button
-		if tiny_btn:
-			_exit_tiny_mode()
-			tiny_btn.modulate = Color(1, 1, 1, 1)
-
-
-func _on_wallpaper_exit_pressed() -> void:
-	if is_instance_valid(_ui_container):
-		var wp_btn := _ui_container.get_node_or_null("Btn_wallpaper") as Button
-		if wp_btn:
-			_exit_wallpaper_mode()
-			wp_btn.modulate = Color(1, 1, 1, 1)
+	for data in _window_manager.get_edge_highlights():
+		draw_rect(data.rect, data.color)
 
 
 func _toggle_wallpaper_mode(btn: Button) -> void:
-	if not _wallpaper_mode:
-		_enter_wallpaper_mode()
-		btn.modulate = Color(0.6, 1.0, 0.8)
-	else:
-		_exit_wallpaper_mode()
-		btn.modulate = Color(1, 1, 1, 1)
-
-
-func _enter_wallpaper_mode() -> void:
-	_prev_window_mode = DisplayServer.window_get_mode()
-	_prev_borderless = DisplayServer.window_get_flag(DisplayServer.WINDOW_FLAG_BORDERLESS)
-	_prev_window_pos = DisplayServer.window_get_position()
-	_prev_window_size = DisplayServer.window_get_size()
-	
-	# 退出 tiny 模式（如果已激活）
-	if _tiny_mode:
-		if is_instance_valid(_ui_container):
-			var tiny_btn := _ui_container.get_node_or_null("Btn_tiny") as Button
-			if tiny_btn:
-				_exit_tiny_mode()
-				tiny_btn.modulate = Color(1, 1, 1, 1)
-	
-	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, true)
-	# 窗口最大化（不覆盖任务栏）
-	DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
-	
-	_hide_all_ui()
-	
-	# 在 Windows 上将窗口设为壁纸层（壁纸之上、图标之下）
-	if DisplayServer.get_name() == "Windows":
-		_set_window_as_wallpaper_windows()
-	
-	_wallpaper_mode = true
-
-
-func _exit_wallpaper_mode() -> void:
-	_close_tiny_exit_popup()
-	_show_all_ui()
-	
-	if DisplayServer.get_name() == "Windows":
-		_restore_window_parent_windows()
-	
-	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_BORDERLESS, _prev_borderless)
-	DisplayServer.window_set_mode(_prev_window_mode)
-	if _prev_window_pos != Vector2i.ZERO:
-		DisplayServer.window_set_position(_prev_window_pos)
-	if _prev_window_size != Vector2i.ZERO:
-		DisplayServer.window_set_size(_prev_window_size)
-	
-	_wallpaper_mode = false
-
-
-func _set_window_as_wallpaper_windows() -> void:
-	"""通过 PowerShell 调用 Win32 API，将游戏窗口设为桌面壁纸层子窗口（壁纸之上、图标之下）"""
-	var hwnd := DisplayServer.window_get_native_handle(DisplayServer.WINDOW_HANDLE)
-	if hwnd == 0:
-		return
-	
-	var ps_code := (
-		'Add-Type @"
-using System;
-using System.Runtime.InteropServices;
-public class W {
-    [DllImport("user32.dll")] public static extern IntPtr FindWindow(string c, string w);
-    [DllImport("user32.dll")] public static extern IntPtr FindWindowEx(IntPtr p, IntPtr c, string cn, string wn);
-    [DllImport("user32.dll")] public static extern IntPtr SetParent(IntPtr c, IntPtr p);
-    [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr h, int x, int y, int w, int h, bool r);
-    [DllImport("user32.dll")] public static extern IntPtr SendMessageTimeout(IntPtr h, int m, IntPtr wp, IntPtr lp, uint f, uint t, out IntPtr r);
-    [DllImport("user32.dll")] public static extern IntPtr GetWindow(IntPtr h, int cmd);
-}
-"@
-Add-Type -AssemblyName System.Windows.Forms
-$hwnd=[IntPtr]' + str(hwnd) + '
-$progman=[W]::FindWindow("Progman",$null)
-# 发送 0x052C 让 Progman 将桌面图标分离到 WorkerW
-[W]::SendMessageTimeout($progman,0x052C,[IntPtr]::Zero,[IntPtr]::Zero,2,1000,[ref][IntPtr]::Zero)
-# 遍历 WorkerW，找到包含 SHELLDLL_DefView 的那个（桌面图标层）
-$workerW=[IntPtr]::Zero
-$wallpaperW=[IntPtr]::Zero
-while($true){
-    $workerW=[W]::FindWindowEx([IntPtr]::Zero,$workerW,"WorkerW",$null)
-    if($workerW -eq [IntPtr]::Zero){break}
-    $defView=[W]::FindWindowEx($workerW,[IntPtr]::Zero,"SHELLDLL_DefView",$null)
-    if($defView -ne [IntPtr]::Zero){
-        # 图标层的上一个 Z 序窗口就是壁纸层
-        $wallpaperW=[W]::GetWindow($workerW,3)  # GW_HWNDPREV = 3
-        if($wallpaperW -eq [IntPtr]::Zero){$wallpaperW=$progman}
-        break
-    }
-}
-if($wallpaperW -eq [IntPtr]::Zero){$wallpaperW=$progman}
-[W]::SetParent($hwnd,[IntPtr]::Zero)
-[W]::SetParent($hwnd,$wallpaperW)
-$w=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width
-$h=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height
-[W]::MoveWindow($hwnd,0,0,$w,$h,$true)
-'
-	)
-	
-	OS.execute("powershell", ["-NoProfile", "-NoLogo", "-Command", ps_code], [], true)
-
-
-func _restore_window_parent_windows() -> void:
-	"""将窗口父级设回桌面"""
-	var hwnd := DisplayServer.window_get_native_handle(DisplayServer.WINDOW_HANDLE)
-	if hwnd == 0:
-		return
-	
-	var ps_code := (
-		'Add-Type @"
-using System;
-using System.Runtime.InteropServices;
-public class W {
-    [DllImport("user32.dll")] public static extern IntPtr SetParent(IntPtr c, IntPtr p);
-}
-"@
-[W]::SetParent([IntPtr]' + str(hwnd) + ',[IntPtr]::Zero)
-'
-	)
-	
-	OS.execute("powershell", ["-NoProfile", "-NoLogo", "-Command", ps_code], [], true)
+	_window_manager.toggle_wallpaper(btn)
 
 
 func toggle_shop() -> void:
@@ -2142,18 +1671,33 @@ func _on_restart_pressed() -> void:
 	SaveManager.reset_save()
 
 
+func _on_window_mode_ui_shown() -> void:
+	"""退出窗口模式后恢复面板可见性"""
+	if not is_instance_valid(_ui_container):
+		return
+	var shop_panel_node := _ui_container.get_node_or_null("ShopPanel") as Panel
+	if shop_panel_node:
+		shop_panel_node.visible = shop_panel_open
+	if _fish_info_panel:
+		_fish_info_panel.visible = _selected_fish != null and is_instance_valid(_selected_fish)
+	if _game_menu_panel:
+		_game_menu_panel.visible = _menu_open
+	if _game_menu_bg:
+		_game_menu_bg.visible = _menu_open
+
+
 func _apply_startup_mode() -> void:
 	match Global.startup_mode:
 		Global.STARTUP_WALLPAPER:
-			if not _wallpaper_mode:
-				_enter_wallpaper_mode()
+			if not _window_manager.wallpaper_mode:
+				_window_manager.enter_wallpaper()
 				if is_instance_valid(_ui_container):
 					var btn := _ui_container.get_node_or_null("Btn_wallpaper") as Button
 					if btn:
 						btn.modulate = Color(0.6, 1.0, 0.8)
 		Global.STARTUP_TINY:
-			if not _tiny_mode:
-				_enter_tiny_mode()
+			if not _window_manager.tiny_mode:
+				_window_manager.enter_tiny()
 				if is_instance_valid(_ui_container):
 					var btn := _ui_container.get_node_or_null("Btn_tiny") as Button
 					if btn:

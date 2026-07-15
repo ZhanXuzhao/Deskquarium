@@ -131,7 +131,7 @@ func _enter_feed_mode() -> void:
 func _place_food_at_mouse() -> void:
 	if fish_container.get_child_count() == 0:
 		return
-	if not Global.spend(10):
+	if not Global.spend(1):
 		return
 	
 	var mouse_pos := get_global_mouse_position()

@@ -54,9 +54,10 @@ func _try_auto_feed() -> void:
 
 
 func _do_auto_feed(food_container: Node2D) -> void:
-	if not Global.can_afford(feed_cost):
+	var total_cost: int = Global.auto_feeder_feed_count * 1
+	if not Global.can_afford(total_cost):
 		return
-	if not Global.spend(feed_cost):
+	if not Global.spend(total_cost):
 		return
 	
 	var aquarium_rect := _get_aquarium_rect()

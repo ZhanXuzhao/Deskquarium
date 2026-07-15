@@ -230,8 +230,8 @@ func _restore_auto_feeder() -> void:
 
 
 func _restore_auto_buyer() -> void:
-	if Global.has_auto_buy:
-		_spawn_auto_buyer()
+	# 自动买鱼默认启用，始终生成
+	_spawn_auto_buyer()
 
 
 func _process(_delta: float) -> void:
@@ -259,6 +259,9 @@ func _handle_input() -> void:
 			_close_tiny_exit_popup()
 			return
 		if _tiny_mode or _wallpaper_mode:
+			return
+		if _auto_buy_settings_panel and is_instance_valid(_auto_buy_settings_panel):
+			_close_auto_buy_settings()
 			return
 		if _menu_open:
 			_toggle_game_menu()
@@ -463,6 +466,7 @@ func _update_ui_positions() -> void:
 				{"action": "sell"},
 				{"action": "move"},
 				{"action": "upgrade"},
+				{"action": "autobuy"},
 				{"action": "wallpaper"},
 				{"action": "tiny"},
 			]
@@ -648,6 +652,7 @@ func _build_side_menu(parent: Node, view_size: Vector2) -> void:
 		{"text": "出售", "icon": "res://assets/ui/ui_sell.svg", "action": "sell"},
 		{"text": "移动", "icon": "res://assets/ui/ui_move.svg", "action": "move"},
 		{"text": "升级", "icon": "res://assets/ui/ui_star.svg", "action": "upgrade"},
+		{"text": "自动", "icon": "res://assets/ui/ui_autobuy_gen.png", "action": "autobuy"},
 		{"text": "壁纸", "icon": "", "action": "wallpaper"},
 		{"text": "Tiny", "icon": "", "action": "tiny"},
 	]
@@ -692,6 +697,8 @@ func _build_side_menu(parent: Node, view_size: Vector2) -> void:
 				btn.pressed.connect(_toggle_move_mode.bind(btn))
 			"upgrade":
 				btn.pressed.connect(do_upgrade)
+			"autobuy":
+				btn.pressed.connect(_open_auto_buy_settings)
 			"wallpaper":
 				btn.pressed.connect(_toggle_wallpaper_mode.bind(btn))
 			"tiny":
@@ -1152,6 +1159,8 @@ func _refresh_shop_ui() -> void:
 		_add_deco_shop_entry(_deco_shop_list, deco_type)
 
 	for eq_type in EquipmentData.EquipmentType.values() as Array[int]:
+		if eq_type == EquipmentData.EquipmentType.AUTO_BUY:
+			continue  # 自动买鱼已默认启用，无需购买
 		_add_equip_shop_entry(_equip_shop_list, eq_type)
 
 
@@ -1466,16 +1475,8 @@ func _buy_equipment(eq_type: int) -> void:
 				Global.has_auto_sell = true
 				Global.auto_sell_enabled = true
 			EquipmentData.EquipmentType.AUTO_BUY:
-				Global.has_auto_buy = true
-				# 默认每种鱼期望数量为 0（不自动购买）
-				if Global.auto_buy_targets.is_empty():
-					var targets := {}
-					for species in FishData.Species.values() as Array[int]:
-						if species == FishData.Species.COUNT:
-							continue
-						targets[species] = 0
-					Global.auto_buy_targets = targets
-				_spawn_auto_buyer()
+				# 自动买鱼已默认启用，此分支不再使用
+				pass
 		Global.equipment_added.emit(eq_type)
 		Global.save_dirty = true
 		_refresh_shop_ui()
@@ -1827,6 +1828,11 @@ var _auto_buy_settings_panel: Panel = null
 func _open_auto_buy_settings() -> void:
 	# 弹出自动买鱼设置界面
 	if not is_instance_valid(_ui_container):
+		return
+	
+	# 如果已打开则关闭
+	if _auto_buy_settings_panel and is_instance_valid(_auto_buy_settings_panel):
+		_close_auto_buy_settings()
 		return
 	
 	# 创建背景遮罩

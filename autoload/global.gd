@@ -178,7 +178,7 @@ var auto_sell_enabled: bool = false:
 	set(value):
 		auto_sell_enabled = value
 		save_dirty = true
-var has_auto_buy: bool = false:
+var has_auto_buy: bool = true:
 	set(value):
 		has_auto_buy = value
 		save_dirty = true
@@ -259,6 +259,7 @@ func _update_move_cursor() -> void:
 func _ready() -> void:
 	unlocked_species.resize(FishData.Species.COUNT)
 	unlocked_species[FishData.Species.GUPPY] = true
+	_init_auto_buy_targets()
 
 
 func can_afford(cost: int) -> bool:
@@ -276,6 +277,16 @@ func earn(amount: int) -> void:
 	coins += amount
 	total_earned += amount
 	check_unlocks()
+
+
+func _init_auto_buy_targets() -> void:
+	if auto_buy_targets.is_empty():
+		var targets := {}
+		for species in FishData.Species.values() as Array[int]:
+			if species == FishData.Species.COUNT:
+				continue
+			targets[species] = 0
+		auto_buy_targets = targets
 
 
 func check_unlocks() -> void:
@@ -354,7 +365,7 @@ func load_save_data(data: Dictionary) -> void:
 	auto_feeder_feed_count = data.get("auto_feeder_feed_count", 3)
 	has_auto_sell = data.get("has_auto_sell", false)
 	auto_sell_enabled = data.get("auto_sell_enabled", false)
-	has_auto_buy = data.get("has_auto_buy", false)
+	has_auto_buy = true  # 自动买鱼默认启用，无需购买
 	var raw_targets = data.get("auto_buy_targets", {})
 	var converted_targets := {}
 	for key in raw_targets:
@@ -389,8 +400,8 @@ func reset_state() -> void:
 	auto_feeder_feed_count = 3
 	has_auto_sell = false
 	auto_sell_enabled = false
-	has_auto_buy = false
-	auto_buy_targets = {}
+	has_auto_buy = true
+	_init_auto_buy_targets()
 	Engine.time_scale = 1.0
 	startup_mode = STARTUP_NORMAL
 	tiny_window_size = Vector2i.ZERO

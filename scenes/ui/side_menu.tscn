@@ -1,0 +1,75 @@
+[gd_scene format=3 uid="uid://6e0v38ba46c5"]
+
+[ext_resource type="Script" uid="uid://dnebft30jyuyv" path="res://scripts/ui/side_menu.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://b57h4s0vx71yj" path="res://assets/ui/ui_shop.svg" id="2"]
+[ext_resource type="Texture2D" uid="uid://dtfi08t68slaa" path="res://assets/ui/ui_food.svg" id="3"]
+[ext_resource type="Texture2D" uid="uid://cbwyvarttdvd8" path="res://assets/ui/ui_sell.svg" id="4"]
+[ext_resource type="Texture2D" uid="uid://bk415tduqepd2" path="res://assets/ui/ui_move.svg" id="5"]
+[ext_resource type="Texture2D" uid="uid://dxcprou4m8hvl" path="res://assets/ui/ui_star.svg" id="6"]
+[ext_resource type="Texture2D" uid="uid://dpoasos1wbaxg" path="res://assets/ui/ui_autobuy.svg" id="7_olcb5"]
+
+[node name="SideMenu" type="Node2D" unique_id=125169092]
+script = ExtResource("1")
+
+[node name="VBox" type="VBoxContainer" parent="." unique_id=1619920542]
+theme_override_constants/separation = 12
+
+[node name="Btn_shop" type="Button" parent="VBox" unique_id=1385849534]
+custom_minimum_size = Vector2(70, 65)
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "商店"
+icon = ExtResource("2")
+icon_alignment = 1
+
+[node name="Btn_feed" type="Button" parent="VBox" unique_id=981540374]
+custom_minimum_size = Vector2(70, 65)
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "喂食"
+icon = ExtResource("3")
+icon_alignment = 1
+
+[node name="Btn_sell" type="Button" parent="VBox" unique_id=517083116]
+custom_minimum_size = Vector2(70, 65)
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "出售"
+icon = ExtResource("4")
+icon_alignment = 1
+
+[node name="Btn_move" type="Button" parent="VBox" unique_id=284241411]
+custom_minimum_size = Vector2(70, 65)
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "移动"
+icon = ExtResource("5")
+icon_alignment = 1
+
+[node name="Btn_upgrade" type="Button" parent="VBox" unique_id=344660775]
+custom_minimum_size = Vector2(70, 65)
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "升级"
+icon = ExtResource("6")
+icon_alignment = 1
+
+[node name="Btn_autobuy" type="Button" parent="VBox" unique_id=1487427662]
+custom_minimum_size = Vector2(70, 65)
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "自动"
+icon = ExtResource("7_olcb5")
+icon_alignment = 1
+
+[node name="Btn_wallpaper" type="Button" parent="VBox" unique_id=655111976]
+custom_minimum_size = Vector2(70, 65)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "壁纸"
+
+[node name="Btn_tiny" type="Button" parent="VBox" unique_id=712868229]
+custom_minimum_size = Vector2(70, 65)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Tiny"

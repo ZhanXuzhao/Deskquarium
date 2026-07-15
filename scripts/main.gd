@@ -49,6 +49,8 @@ var _game_menu_bg: ColorRect = null
 var _fish_scale_label: Label = null
 var _menu_open: bool = false
 
+var _side_menu: SideMenu = null
+
 var _coin_label: Label
 var _earned_label: Label
 var _fish_count_label: Label
@@ -101,6 +103,16 @@ func _ready() -> void:
 	_decoration_placer.aquarium_bounds_getter = func() -> Rect2: return aquarium_bounds
 
 	_setup_ui()
+	
+	# 连接侧边栏信号
+	_side_menu.shop_pressed.connect(toggle_shop)
+	_side_menu.feed_pressed.connect(_on_side_menu_feed)
+	_side_menu.sell_toggled.connect(_on_side_menu_sell)
+	_side_menu.move_toggled.connect(_on_side_menu_move)
+	_side_menu.upgrade_pressed.connect(do_upgrade)
+	_side_menu.autobuy_pressed.connect(_open_auto_buy_settings)
+	_side_menu.wallpaper_toggled.connect(_on_side_menu_wallpaper)
+	_side_menu.tiny_toggled.connect(_on_side_menu_tiny)
 
 	# 初始缩放
 	call_deferred(&"_update_aquarium_scale")
@@ -339,7 +351,7 @@ func _setup_ui() -> void:
 
 	_build_hud(container, view_size)
 	_build_shop_panel(container, view_size)
-	_build_side_menu(container, view_size)
+	_build_side_menu_scene(container, view_size)
 	_build_fish_info_panel(container, view_size)
 	_build_game_menu(container, view_size)
 	_build_timescale_label(container, view_size)
@@ -366,29 +378,8 @@ func _update_ui_positions() -> void:
 		fish_count_label.position = Vector2(view_size.x - 150, 15)
 
 	# Side menu
-	for child in _ui_container.get_children():
-		if child is Button and child.name.begins_with("Btn_"):
-			var action := child.name.trim_prefix("Btn_")
-			var buttons := [
-				{"action": "shop"},
-				{"action": "feed"},
-				{"action": "sell"},
-				{"action": "move"},
-				{"action": "upgrade"},
-				{"action": "autobuy"},
-				{"action": "wallpaper"},
-				{"action": "tiny"},
-			]
-			var btn_count := buttons.size()
-			var btn_width := 70
-			var btn_height := 65
-			var spacing := 12
-			var total_height := btn_count * btn_height + (btn_count - 1) * spacing
-			var start_y := (view_size.y - total_height) / 2
-			for i in btn_count:
-				if buttons[i].action == action:
-					child.position = Vector2(view_size.x - 85 + (85 - btn_width) / 2.0, start_y + i * (btn_height + spacing))
-					break
+	if is_instance_valid(_side_menu):
+		_side_menu.update_position(view_size)
 
 	# Shop panel
 	var shop_panel := _ui_container.get_node_or_null("ShopPanel") as Panel
@@ -540,68 +531,19 @@ func _build_shop_panel(parent: Node, view_size: Vector2) -> void:
 	tab_container.add_child(equip_tab)
 
 
-func _build_side_menu(parent: Node, view_size: Vector2) -> void:
-	var buttons := [
-		{"text": "商店", "icon": "res://assets/ui/ui_shop.svg", "action": "shop"},
-		{"text": "喂食", "icon": "res://assets/ui/ui_food.svg", "action": "feed"},
-		{"text": "出售", "icon": "res://assets/ui/ui_sell.svg", "action": "sell"},
-		{"text": "移动", "icon": "res://assets/ui/ui_move.svg", "action": "move"},
-		{"text": "升级", "icon": "res://assets/ui/ui_star.svg", "action": "upgrade"},
-		{"text": "自动", "icon": "res://assets/ui/ui_autobuy_gen.png", "action": "autobuy"},
-		{"text": "壁纸", "icon": "", "action": "wallpaper"},
-		{"text": "Tiny", "icon": "", "action": "tiny"},
-	]
-
-	var btn_count := buttons.size()
-	var btn_width := 70
-	var btn_height := 65
-	var spacing := 12
-	var total_height := btn_count * btn_height + (btn_count - 1) * spacing
-	var start_y := (view_size.y - total_height) / 2
-
-	for i in btn_count:
-		var data: Dictionary = buttons[i]
-		var btn_x := view_size.x - 85 + (85 - btn_width) / 2.0
-		var btn_y := start_y + i * (btn_height + spacing)
-
-		var btn := Button.new()
-		btn.name = "Btn_%s" % data.action
-		btn.text = data.text
-		btn.position = Vector2(btn_x, btn_y)
-		btn.size = Vector2(btn_width, btn_height)
-		btn.add_theme_font_size_override("font_size", 10)
-		parent.add_child(btn)
-
-		if data.icon.is_empty():
-			# 壁纸按钮无图标，仅文字
-			btn.add_theme_font_size_override("font_size", 11)
-		else:
-			var tex := load(data.icon) as Texture2D
-			if tex:
-				btn.icon = tex
-				btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-
-		match data.action:
-			"shop":
-				btn.pressed.connect(toggle_shop)
-			"feed":
-				btn.pressed.connect(_feed_manager.toggle.bind(btn))
-
-			"sell":
-				btn.pressed.connect(_toggle_sell_mode.bind(btn))
-			"move":
-				btn.pressed.connect(_toggle_move_mode.bind(btn))
-			"upgrade":
-				btn.pressed.connect(do_upgrade)
-			"autobuy":
-				btn.pressed.connect(_open_auto_buy_settings)
-			"wallpaper":
-				btn.pressed.connect(_toggle_wallpaper_mode.bind(btn))
-			"tiny":
-				btn.pressed.connect(_toggle_tiny_mode.bind(btn))
+func _build_side_menu_scene(parent: Node, view_size: Vector2) -> void:
+	var scene := preload("res://scenes/ui/side_menu.tscn")
+	_side_menu = scene.instantiate()
+	_side_menu.name = "SideMenu"
+	parent.add_child(_side_menu)
+	_side_menu.update_position(view_size)
 
 
-func _toggle_sell_mode(btn: Button) -> void:
+func _on_side_menu_feed(btn: Button) -> void:
+	_feed_manager.toggle(btn)
+
+
+func _on_side_menu_sell(btn: Button) -> void:
 	Global.sell_mode = not Global.sell_mode
 	if Global.sell_mode:
 		btn.modulate = Color(1, 0.5, 0.5)
@@ -613,7 +555,7 @@ func _toggle_sell_mode(btn: Button) -> void:
 	, CONNECT_ONE_SHOT)
 
 
-func _toggle_move_mode(btn: Button) -> void:
+func _on_side_menu_move(btn: Button) -> void:
 	Global.move_mode = not Global.move_mode
 	if Global.move_mode:
 		btn.modulate = Color(0.6, 1.0, 0.6)
@@ -625,17 +567,17 @@ func _toggle_move_mode(btn: Button) -> void:
 	, CONNECT_ONE_SHOT)
 
 
-func _toggle_tiny_mode(btn: Button) -> void:
+func _on_side_menu_tiny(btn: Button) -> void:
 	_window_manager.toggle_tiny(btn)
+
+
+func _on_side_menu_wallpaper(btn: Button) -> void:
+	_window_manager.toggle_wallpaper(btn)
 
 
 func _draw() -> void:
 	for data in _window_manager.get_edge_highlights():
 		draw_rect(data.rect, data.color)
-
-
-func _toggle_wallpaper_mode(btn: Button) -> void:
-	_window_manager.toggle_wallpaper(btn)
 
 
 func toggle_shop() -> void:

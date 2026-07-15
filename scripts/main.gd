@@ -306,7 +306,7 @@ func _input(event: InputEvent) -> void:
 		var view_size := get_viewport_rect().size
 		var mouse_pos := get_viewport().get_mouse_position()
 		
-		# 壁纸模式：仅拦截点击 + 右键弹窗（无拖拽缩放）
+		# 壁纸模式：仅拦截点击 + 右键弹窗 + 双击退出（无拖拽缩放）
 		if _wallpaper_mode:
 			if event.button_index == MOUSE_BUTTON_LEFT:
 				if _tiny_exit_popup and is_instance_valid(_tiny_exit_popup) and _tiny_exit_popup.visible:
@@ -315,6 +315,14 @@ func _input(event: InputEvent) -> void:
 						return
 					else:
 						_close_tiny_exit_popup()
+				if event.double_click:
+					_exit_wallpaper_mode()
+					if is_instance_valid(_ui_container):
+						var wallpaper_btn := _ui_container.get_node_or_null("Btn_wallpaper") as Button
+						if wallpaper_btn:
+							wallpaper_btn.modulate = Color(1, 1, 1, 1)
+					get_viewport().set_input_as_handled()
+					return
 				get_viewport().set_input_as_handled()
 				return
 			if event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:

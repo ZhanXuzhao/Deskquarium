@@ -75,8 +75,6 @@ func _ready() -> void:
 	wm.name = "WindowManager"
 	add_child(wm)
 	_window_manager = wm
-	_window_manager.ui_container = _ui_container
-	_window_manager.ui_layer = $UI
 	_window_manager.aquarium_scale_needed.connect(_update_aquarium_scale)
 	_window_manager.redraw_requested.connect(queue_redraw)
 	_window_manager.after_ui_shown.connect(_on_window_mode_ui_shown)
@@ -89,7 +87,6 @@ func _ready() -> void:
 	_feed_manager.fish_container = fish_container
 	_feed_manager.food_container = food_container
 	_feed_manager.aquarium = aquarium
-	_feed_manager.ui_container = _ui_container
 	_feed_manager.aquarium_bounds_getter = func() -> Rect2: return aquarium_bounds
 	
 	# 初始化 DecorationPlacer (必须在 _setup_ui 之前)
@@ -103,6 +100,11 @@ func _ready() -> void:
 	_decoration_placer.aquarium_bounds_getter = func() -> Rect2: return aquarium_bounds
 
 	_setup_ui()
+	
+	# 现在 _ui_container 已创建，设置引用
+	_window_manager.ui_container = _ui_container
+	_window_manager.ui_layer = $UI
+	_feed_manager.ui_container = _ui_container
 	
 	# 连接侧边栏信号
 	_side_menu.shop_pressed.connect(toggle_shop)

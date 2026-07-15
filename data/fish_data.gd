@@ -565,3 +565,52 @@ static func get_sell_price(fish_species: Species, level: int) -> int:
 # 根据枚举值获取对应的英文文件名（小写）
 static func get_texture_filename(species: Species) -> String:
 	return get_species_name_en(species).to_lower()
+
+# 获取鱼的基准大小（相对于256x256纹理的比例，最大不超过1.0即256像素）
+static func get_base_size(species: Species) -> float:
+	match species:
+		Species.NEON_TETRA:
+			return 0.30
+		Species.ZEBRAFISH:
+			return 0.30
+		Species.GUPPY:
+			return 0.35
+		Species.CARDINAL_TETRA:
+			return 0.35
+		Species.MOLLY:
+			return 0.40
+		Species.MICKEY_MOUSE_PLATY:
+			return 0.35
+		Species.RUMMYNOSE_TETRA:
+			return 0.35
+		Species.HARLEQUIN_RASBORA:
+			return 0.35
+		Species.OTOCINCLUS:
+			return 0.35
+		Species.CORYDORAS:
+			return 0.40
+		Species.MOONFISH:
+			return 0.35
+		Species.SERPAE_TETRA:
+			return 0.40
+		Species.TIGER_BARB:
+			return 0.45
+		Species.BETTA:
+			return 0.55
+		Species.GOLDFISH:
+			return 0.60
+		Species.GOURAMI:
+			return 0.65
+		Species.PEARL_GOURAMI:
+			return 0.70
+		Species.BRISTLENOSE_PLECO:
+			return 0.75
+		Species.ANGELFISH:
+			return 0.80
+		Species.DISCUS:
+			return 0.85
+		Species.PLECOSTOMUS:
+			return 0.95
+		Species.AROWANA:
+			return 1.00
+	return 0.50

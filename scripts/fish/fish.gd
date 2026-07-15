@@ -71,8 +71,9 @@ func _update_appearance() -> void:
 		if tex:
 			sprite.texture = tex
 	
-	var scale_factor := 0.5 + level * 0.8 + species * 0.15
-	sprite.scale = Vector2(scale_factor, scale_factor) * 0.6
+	var base_size := FishData.get_base_size(species)
+	var size := base_size * (0.5 + level * 0.5)
+	sprite.scale = Vector2(size, size)
 	sprite.flip_h = direction < 0
 	
 

@@ -195,6 +195,11 @@ var startup_mode: int = STARTUP_NORMAL:
 		startup_mode = value
 		save_dirty = true
 
+var fish_scale: float = 1.0:
+	set(value):
+		fish_scale = clampf(value, 0.5, 10.0)
+		save_dirty = true
+
 var tiny_window_size: Vector2i = Vector2i.ZERO
 var tiny_window_pos: Vector2i = Vector2i.ZERO
 
@@ -340,6 +345,7 @@ func get_save_data() -> Dictionary:
 		"tiny_window_pos_x": tiny_window_pos.x,
 		"tiny_window_pos_y": tiny_window_pos.y,
 		"startup_mode": startup_mode,
+		"fish_scale": fish_scale,
 	}
 
 
@@ -376,6 +382,7 @@ func load_save_data(data: Dictionary) -> void:
 	tiny_window_size = Vector2i(data.get("tiny_window_size_x", 0), data.get("tiny_window_size_y", 0))
 	tiny_window_pos = Vector2i(data.get("tiny_window_pos_x", 0), data.get("tiny_window_pos_y", 0))
 	startup_mode = data.get("startup_mode", STARTUP_NORMAL)
+	fish_scale = data.get("fish_scale", 1.0)
 	check_unlocks()
 	game_loaded.emit()
 

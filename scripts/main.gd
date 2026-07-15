@@ -507,7 +507,7 @@ func _update_ui_positions() -> void:
 		_game_menu_bg.size = view_size
 		_game_menu_bg.position = Vector2.ZERO
 	if _game_menu_panel:
-		_game_menu_panel.position = Vector2(view_size.x / 2 - 110, view_size.y / 2 - 110)
+		_game_menu_panel.position = Vector2(view_size.x / 2 - 110, view_size.y / 2 - 120)
 
 	# Timescale label
 	if _timescale_label:
@@ -2088,8 +2088,8 @@ func _build_game_menu(parent: Node, view_size: Vector2) -> void:
 
 	_game_menu_panel = Panel.new()
 	_game_menu_panel.name = "GameMenuPanel"
-	_game_menu_panel.size = Vector2(220, 220)
-	_game_menu_panel.position = Vector2(view_size.x / 2 - 110, view_size.y / 2 - 110)
+	_game_menu_panel.size = Vector2(220, 240)
+	_game_menu_panel.position = Vector2(view_size.x / 2 - 110, view_size.y / 2 - 140)
 	_game_menu_panel.visible = false
 	parent.add_child(_game_menu_panel)
 
@@ -2133,12 +2133,28 @@ func _build_game_menu(parent: Node, view_size: Vector2) -> void:
 		Global.startup_mode = mode_option.get_item_id(index)
 	)
 
-	var cancel_btn := Button.new()
-	cancel_btn.text = "取消"
-	cancel_btn.position = Vector2(20, 180)
-	cancel_btn.size = Vector2(180, 30)
-	_game_menu_panel.add_child(cancel_btn)
-	cancel_btn.pressed.connect(_toggle_game_menu)
+	# ── 鱼缩放比例 ──
+	var scale_label := Label.new()
+	scale_label.text = "鱼缩放: 1.0x"
+	scale_label.name = "FishScaleLabel"
+	scale_label.position = Vector2(20, 178)
+	scale_label.add_theme_font_size_override("font_size", 12)
+	_game_menu_panel.add_child(scale_label)
+
+	var scale_slider := HSlider.new()
+	scale_slider.name = "FishScaleSlider"
+	scale_slider.position = Vector2(20, 196)
+	scale_slider.size = Vector2(180, 28)
+	scale_slider.min_value = 0.5
+	scale_slider.max_value = 10.0
+	scale_slider.step = 0.1
+	scale_slider.value = Global.fish_scale
+	_game_menu_panel.add_child(scale_slider)
+	scale_slider.value_changed.connect(func(value: float):
+		value = snapped(value, 0.1)
+		Global.fish_scale = value
+		scale_label.text = "鱼缩放: %.1fx" % value
+	)
 
 
 func _toggle_game_menu() -> void:

@@ -54,16 +54,11 @@ var _earned_label: Label
 var _fish_count_label: Label
 
 var _window_manager: WindowManager = null
+var _feed_manager: FeedManager = null
 
 # 装饰物放置模式
 var _placement_preview: Sprite2D = null
 var _placement_deco_type: int = -1
-
-# 投喂模式
-var _feed_mode: bool = false
-var _feed_holding: bool = false
-var _feed_hold_time: float = 0.0
-const FEED_INTERVAL: float = 1.0 / 3.0
 
 
 func _ready() -> void:
@@ -88,6 +83,17 @@ func _ready() -> void:
 	_window_manager.aquarium_scale_needed.connect(_update_aquarium_scale)
 	_window_manager.redraw_requested.connect(queue_redraw)
 	_window_manager.after_ui_shown.connect(_on_window_mode_ui_shown)
+	
+	# 初始化 FeedManager
+	var fm := FeedManager.new()
+	fm.name = "FeedManager"
+	add_child(fm)
+	_feed_manager = fm
+	_feed_manager.fish_container = fish_container
+	_feed_manager.food_container = food_container
+	_feed_manager.aquarium = aquarium
+	_feed_manager.ui_container = _ui_container
+	_feed_manager.aquarium_bounds_getter = func() -> Rect2: return aquarium_bounds
 
 	# 初始缩放
 	call_deferred(&"_update_aquarium_scale")
@@ -218,12 +224,7 @@ func _process(_delta: float) -> void:
 		_update_placement_preview()
 	
 	_window_manager.handle_process(_delta)
-	
-	if _feed_mode and _feed_holding:
-		_feed_hold_time += _delta
-		while _feed_hold_time >= FEED_INTERVAL:
-			_feed_hold_time -= FEED_INTERVAL
-			_place_food_at_mouse()
+	_feed_manager.process_feed(_delta)
 
 
 func _handle_input() -> void:
@@ -248,8 +249,8 @@ func _handle_input() -> void:
 				aqua.clear_move_selection()
 		elif Global.decoration_placement_active:
 			_cancel_placement()
-		elif _feed_mode:
-			_exit_feed_mode()
+		elif _feed_manager.is_active():
+			_feed_manager.exit_feed_mode()
 
 	var minus_pressed := Input.is_key_pressed(KEY_MINUS)
 	var equal_pressed := Input.is_key_pressed(KEY_EQUAL)
@@ -290,8 +291,9 @@ func _input(event: InputEvent) -> void:
 		if Global.decoration_placement_active and not shop_panel_open:
 			_cancel_placement()
 			return
-		if _feed_mode:
-			_exit_feed_mode()
+		if _feed_manager.is_active():
+			_feed_manager.exit_feed_mode()
+			get_viewport().set_input_as_handled()
 			return
 		if _selected_fish != null:
 			_hide_fish_info()
@@ -302,16 +304,8 @@ func _input(event: InputEvent) -> void:
 		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 			_confirm_placement()
 	
-	if _feed_mode and event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			if event.pressed:
-				_feed_holding = true
-				_feed_hold_time = 0.0
-				_place_food_at_mouse()
-			else:
-				_feed_holding = false
-			get_viewport().set_input_as_handled()
-			return
+	if _feed_manager.handle_input(event):
+		return
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -582,7 +576,8 @@ func _build_side_menu(parent: Node, view_size: Vector2) -> void:
 			"shop":
 				btn.pressed.connect(toggle_shop)
 			"feed":
-				btn.pressed.connect(_toggle_feed_mode.bind(btn))
+				btn.pressed.connect(_feed_manager.toggle.bind(btn))
+
 			"sell":
 				btn.pressed.connect(_toggle_sell_mode.bind(btn))
 			"move":
@@ -1042,89 +1037,6 @@ func _spawn_auto_buyer() -> void:
 	var buyer := _AutoBuyerScript.new()
 	buyer.name = "AutoBuyer"
 	equipment_container.add_child(buyer)
-
-
-func do_feed() -> void:
-	if fish_container.get_child_count() == 0:
-		return
-
-	if not Global.spend(10):
-		return
-
-	var pellet_scene := preload("res://scenes/food/food_pellet.tscn")
-	var pellet_script := preload("res://scripts/food/food_pellet.gd")
-	for i in 10:
-		var pellet := pellet_scene.instantiate()
-		pellet.set_script(pellet_script)
-
-		var margin := 80
-		var x := randf_range(aquarium_bounds.position.x + margin, aquarium_bounds.position.x + aquarium_bounds.size.x - margin)
-		pellet.position = Vector2(x, aquarium_bounds.position.y + 10)
-		pellet.bottom_y = aquarium_bounds.position.y + aquarium_bounds.size.y - 10
-		food_container.add_child(pellet)
-
-		for fish in fish_container.get_children():
-			if fish.has_method("set_food_target"):
-				fish.set_food_target(pellet)
-
-
-# ── 投喂模式 ─────────────────────────────────────────────────────────────
-
-func _toggle_feed_mode(btn: Button) -> void:
-	if not _feed_mode:
-		_enter_feed_mode()
-		btn.modulate = Color(1.0, 0.8, 0.4)
-	else:
-		_exit_feed_mode()
-
-
-func _enter_feed_mode() -> void:
-	_feed_mode = true
-	# 将光标设为鱼食图标（缩放到 32x32）
-	var cursor_tex := load("res://assets/ui/ui_food.svg") as Texture2D
-	if cursor_tex:
-		var img := cursor_tex.get_image()
-		if img:
-			img.resize(32, 32, Image.INTERPOLATE_LANCZOS)
-			var scaled_tex := ImageTexture.create_from_image(img)
-			Input.set_custom_mouse_cursor(scaled_tex, Input.CURSOR_ARROW, Vector2(16, 16))
-
-
-func _exit_feed_mode() -> void:
-	_feed_mode = false
-	_feed_holding = false
-	_feed_hold_time = 0.0
-	Input.set_custom_mouse_cursor(null)
-	if is_instance_valid(_ui_container):
-		var feed_btn := _ui_container.get_node_or_null("Btn_feed") as Button
-		if feed_btn:
-			feed_btn.modulate = Color(1, 1, 1, 1)
-
-
-func _place_food_at_mouse() -> void:
-	if fish_container.get_child_count() == 0:
-		return
-	if not Global.spend(10):
-		return
-	
-	var mouse_pos := get_global_mouse_position()
-	var local_pos := aquarium.to_local(mouse_pos)
-	
-	var margin := 20.0
-	var clamped_x := clampf(local_pos.x, margin, aquarium_bounds.size.x - margin)
-	var clamped_y := clampf(local_pos.y, margin, aquarium_bounds.size.y - margin)
-	
-	var pellet_scene := preload("res://scenes/food/food_pellet.tscn")
-	var pellet_script := preload("res://scripts/food/food_pellet.gd")
-	var pellet := pellet_scene.instantiate()
-	pellet.set_script(pellet_script)
-	pellet.position = Vector2(clamped_x, clamped_y)
-	pellet.bottom_y = aquarium_bounds.position.y + aquarium_bounds.size.y - 10
-	food_container.add_child(pellet)
-	
-	for fish in fish_container.get_children():
-		if fish.has_method("set_food_target"):
-			fish.set_food_target(pellet)
 
 
 func do_upgrade() -> void:

@@ -399,6 +399,10 @@ func _input(event: InputEvent) -> void:
 		if _feed_mode:
 			_exit_feed_mode()
 			return
+		if _selected_fish != null:
+			_hide_fish_info()
+			get_viewport().set_input_as_handled()
+			return
 
 	if Global.decoration_placement_active and not shop_panel_open and event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
@@ -1728,7 +1732,11 @@ func _update_fish_info_panel_position() -> void:
 func _on_fish_info_requested(fish: Node2D) -> void:
 	if not is_instance_valid(fish) or not fish is Fish:
 		return
+	# 清除之前选中鱼的选中状态
+	if _selected_fish != null and is_instance_valid(_selected_fish):
+		_selected_fish.selected = false
 	_selected_fish = fish as Fish
+	_selected_fish.selected = true
 	_refresh_fish_info_panel()
 	_fish_info_panel.visible = true
 
@@ -1770,8 +1778,10 @@ func _navigate_fish(direction: int) -> void:
 		return
 	var idx := fish_list.find(_selected_fish)
 	var new_idx := (idx + direction + fish_list.size()) % fish_list.size()
+	_selected_fish.selected = false
 	_selected_fish = fish_list[new_idx] as Fish
 	if _selected_fish:
+		_selected_fish.selected = true
 		_refresh_fish_info_panel()
 
 
@@ -1801,15 +1811,20 @@ func _sell_selected_fish() -> void:
 	# After selling, pick the next fish
 	# Note: queue_free doesn't remove immediately, so the sold fish is still in the list
 	if total <= 1:
+		_selected_fish.selected = false
 		_hide_fish_info()
 	else:
 		var new_idx := (idx - 1) if (idx >= total - 1) else (idx + 1)
+		_selected_fish.selected = false
 		_selected_fish = fish_container.get_child(new_idx) as Fish
 		if _selected_fish:
+			_selected_fish.selected = true
 			_refresh_fish_info_panel()
 
 
 func _hide_fish_info() -> void:
+	if _selected_fish != null and is_instance_valid(_selected_fish):
+		_selected_fish.selected = false
 	_selected_fish = null
 	if _fish_info_panel:
 		_fish_info_panel.visible = false

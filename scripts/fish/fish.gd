@@ -15,6 +15,10 @@ enum FishState {
 			_update_appearance()
 
 var level: float = 0.0
+var selected: bool = false:
+	set(value):
+		selected = value
+		queue_redraw()
 var _auto_sell_triggered: bool = false
 var hunger: float = 100.0:
 	set(value):
@@ -60,6 +64,17 @@ func _ready() -> void:
 	tween.tween_property(self, "modulate:a", 1.0, 0.5)
 
 
+func _draw() -> void:
+	if not selected:
+		return
+	if sprite == null or sprite.texture == null:
+		return
+	var tex_size := sprite.texture.get_size()
+	var size := tex_size * sprite.scale
+	var rect := Rect2(-size / 2, size)
+	draw_rect(rect, Color(1, 1, 0, 0.8), false, 2.0)
+
+
 func _on_hunger_timeout() -> void:
 	hunger -= 1.0
 
@@ -75,6 +90,9 @@ func _update_appearance() -> void:
 	var size := base_size * (0.5 + level * 0.5)
 	sprite.scale = Vector2(size, size)
 	sprite.flip_h = direction < 0
+	
+	if selected:
+		queue_redraw()
 	
 
 

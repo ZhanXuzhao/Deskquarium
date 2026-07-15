@@ -287,6 +287,7 @@ func set_food_target(food: Node2D) -> void:
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT:
+			get_viewport().set_input_as_handled()
 			if Global.decoration_placement_active:
 				return
 			if Global.sell_mode and get_sellable():

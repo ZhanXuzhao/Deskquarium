@@ -2,45 +2,38 @@ extends Resource
 class_name DecorationData
 
 enum DecorationType {
+	# 水草 (Plant)
 	ANUBIAS,
 	BUCEPHALANDRA,
-	CONCH,
-	CORAL_1,
-	CORAL_2,
-	CORAL_3,
-	CORAL_BONE_1,
-	CORAL_BONE_2,
 	HYDRILLA,
 	MOSS_1,
 	MOSS_2,
 	MOSS_3,
 	MOSS_4,
-	SAND_1,
-	SAND_2,
+	VALLISNERIA,
+	# 珊瑚 (Coral)
+	CORAL_1,
+	CORAL_2,
+	CORAL_3,
+	CORAL_BONE_1,
+	CORAL_BONE_2,
+	# 装饰 (Ornament)
+	CONCH,
 	SEASHELL,
 	SHRIMP_AVE,
-	VALLISNERIA,
+	# 底砂 (Substrate)
+	SAND_1,
+	SAND_2,
 	COUNT,
 }
 
 static func get_display_name(deco_type: DecorationType) -> String:
 	match deco_type:
+		# 水草 (Plant)
 		DecorationType.ANUBIAS:
 			return "水榕"
 		DecorationType.BUCEPHALANDRA:
 			return "椒草"
-		DecorationType.CONCH:
-			return "海螺"
-		DecorationType.CORAL_1:
-			return "珊瑚（红）"
-		DecorationType.CORAL_2:
-			return "珊瑚（蓝）"
-		DecorationType.CORAL_3:
-			return "珊瑚（紫）"
-		DecorationType.CORAL_BONE_1:
-			return "珊瑚骨（大）"
-		DecorationType.CORAL_BONE_2:
-			return "珊瑚骨（小）"
 		DecorationType.HYDRILLA:
 			return "水蕴草"
 		DecorationType.MOSS_1:
@@ -51,36 +44,40 @@ static func get_display_name(deco_type: DecorationType) -> String:
 			return "莫斯 3"
 		DecorationType.MOSS_4:
 			return "莫斯 4"
-		DecorationType.SAND_1:
-			return "细沙（浅）"
-		DecorationType.SAND_2:
-			return "细沙（深）"
+		DecorationType.VALLISNERIA:
+			return "水兰"
+		# 珊瑚 (Coral)
+		DecorationType.CORAL_1:
+			return "珊瑚（红）"
+		DecorationType.CORAL_2:
+			return "珊瑚（蓝）"
+		DecorationType.CORAL_3:
+			return "珊瑚（紫）"
+		DecorationType.CORAL_BONE_1:
+			return "珊瑚骨（大）"
+		DecorationType.CORAL_BONE_2:
+			return "珊瑚骨（小）"
+		# 装饰 (Ornament)
+		DecorationType.CONCH:
+			return "海螺"
 		DecorationType.SEASHELL:
 			return "贝壳"
 		DecorationType.SHRIMP_AVE:
 			return "虾屋"
-		DecorationType.VALLISNERIA:
-			return "水兰"
+		# 底砂 (Substrate)
+		DecorationType.SAND_1:
+			return "细沙（浅）"
+		DecorationType.SAND_2:
+			return "细沙（深）"
 	return ""
 
 static func get_cost(deco_type: DecorationType) -> int:
 	match deco_type:
+		# 水草 (Plant)
 		DecorationType.ANUBIAS:
 			return 80
 		DecorationType.BUCEPHALANDRA:
 			return 100
-		DecorationType.CONCH:
-			return 60
-		DecorationType.CORAL_1:
-			return 120
-		DecorationType.CORAL_2:
-			return 120
-		DecorationType.CORAL_3:
-			return 120
-		DecorationType.CORAL_BONE_1:
-			return 100
-		DecorationType.CORAL_BONE_2:
-			return 80
 		DecorationType.HYDRILLA:
 			return 60
 		DecorationType.MOSS_1:
@@ -91,36 +88,40 @@ static func get_cost(deco_type: DecorationType) -> int:
 			return 50
 		DecorationType.MOSS_4:
 			return 50
-		DecorationType.SAND_1:
-			return 40
-		DecorationType.SAND_2:
-			return 40
+		DecorationType.VALLISNERIA:
+			return 70
+		# 珊瑚 (Coral)
+		DecorationType.CORAL_1:
+			return 120
+		DecorationType.CORAL_2:
+			return 120
+		DecorationType.CORAL_3:
+			return 120
+		DecorationType.CORAL_BONE_1:
+			return 100
+		DecorationType.CORAL_BONE_2:
+			return 80
+		# 装饰 (Ornament)
+		DecorationType.CONCH:
+			return 60
 		DecorationType.SEASHELL:
 			return 70
 		DecorationType.SHRIMP_AVE:
 			return 90
-		DecorationType.VALLISNERIA:
-			return 70
+		# 底砂 (Substrate)
+		DecorationType.SAND_1:
+			return 40
+		DecorationType.SAND_2:
+			return 40
 	return 0
 
 static func get_texture_path(deco_type: DecorationType) -> String:
 	match deco_type:
+		# 水草 (Plant)
 		DecorationType.ANUBIAS:
 			return "res://assets/decorations/deco_plant_anubias.png"
 		DecorationType.BUCEPHALANDRA:
 			return "res://assets/decorations/deco_plant_bucephalandra.png"
-		DecorationType.CONCH:
-			return "res://assets/decorations/deco_ornament_conch.png"
-		DecorationType.CORAL_1:
-			return "res://assets/decorations/deco_coral_coral_1.png"
-		DecorationType.CORAL_2:
-			return "res://assets/decorations/deco_coral_coral_2.png"
-		DecorationType.CORAL_3:
-			return "res://assets/decorations/deco_coral_coral_3.png"
-		DecorationType.CORAL_BONE_1:
-			return "res://assets/decorations/deco_coral_coral_bone_1.png"
-		DecorationType.CORAL_BONE_2:
-			return "res://assets/decorations/deco_coral_coral_bone_2.png"
 		DecorationType.HYDRILLA:
 			return "res://assets/decorations/deco_plant_hydrilla.png"
 		DecorationType.MOSS_1:
@@ -131,16 +132,31 @@ static func get_texture_path(deco_type: DecorationType) -> String:
 			return "res://assets/decorations/deco_plant_moss_3.png"
 		DecorationType.MOSS_4:
 			return "res://assets/decorations/deco_plant_moss_4.png"
-		DecorationType.SAND_1:
-			return "res://assets/decorations/deco_substrate_sand_1.png"
-		DecorationType.SAND_2:
-			return "res://assets/decorations/deco_substrate_sand_2.png"
+		DecorationType.VALLISNERIA:
+			return "res://assets/decorations/deco_plant_vallisneria.png"
+		# 珊瑚 (Coral)
+		DecorationType.CORAL_1:
+			return "res://assets/decorations/deco_coral_coral_1.png"
+		DecorationType.CORAL_2:
+			return "res://assets/decorations/deco_coral_coral_2.png"
+		DecorationType.CORAL_3:
+			return "res://assets/decorations/deco_coral_coral_3.png"
+		DecorationType.CORAL_BONE_1:
+			return "res://assets/decorations/deco_coral_coral_bone_1.png"
+		DecorationType.CORAL_BONE_2:
+			return "res://assets/decorations/deco_coral_coral_bone_2.png"
+		# 装饰 (Ornament)
+		DecorationType.CONCH:
+			return "res://assets/decorations/deco_ornament_conch.png"
 		DecorationType.SEASHELL:
 			return "res://assets/decorations/deco_ornament_seashell.png"
 		DecorationType.SHRIMP_AVE:
 			return "res://assets/decorations/deco_ornament_shrimp_ave.png"
-		DecorationType.VALLISNERIA:
-			return "res://assets/decorations/deco_plant_vallisneria.png"
+		# 底砂 (Substrate)
+		DecorationType.SAND_1:
+			return "res://assets/decorations/deco_substrate_sand_1.png"
+		DecorationType.SAND_2:
+			return "res://assets/decorations/deco_substrate_sand_2.png"
 	return ""
 
 static func get_sell_price(deco_type: DecorationType) -> int:
@@ -149,12 +165,24 @@ static func get_sell_price(deco_type: DecorationType) -> int:
 
 static func get_description(deco_type: DecorationType) -> String:
 	match deco_type:
+		# 水草 (Plant)
 		DecorationType.ANUBIAS:
 			return "漂亮的水榕，适合绑在沉木上。"
 		DecorationType.BUCEPHALANDRA:
 			return "精致的椒草，增添绿色层次。"
-		DecorationType.CONCH:
-			return "来自海洋的海螺壳。"
+		DecorationType.HYDRILLA:
+			return "茂盛的水蕴草，快速生长。"
+		DecorationType.MOSS_1:
+			return "莫斯草皮 1 号。"
+		DecorationType.MOSS_2:
+			return "莫斯草皮 2 号。"
+		DecorationType.MOSS_3:
+			return "莫斯草皮 3 号。"
+		DecorationType.MOSS_4:
+			return "莫斯草皮 4 号。"
+		DecorationType.VALLISNERIA:
+			return "水兰，飘逸的长叶水草。"
+		# 珊瑚 (Coral)
 		DecorationType.CORAL_1:
 			return "红色的珊瑚装饰。"
 		DecorationType.CORAL_2:
@@ -165,26 +193,18 @@ static func get_description(deco_type: DecorationType) -> String:
 			return "大块的珊瑚骨，营造自然景观。"
 		DecorationType.CORAL_BONE_2:
 			return "小块的珊瑚骨，适合点缀。"
-		DecorationType.HYDRILLA:
-			return"茂盛的水蕴草，快速生长。"
-		DecorationType.MOSS_1:
-			return "莫斯草皮 1 号。"
-		DecorationType.MOSS_2:
-			return "莫斯草皮 2 号。"
-		DecorationType.MOSS_3:
-			return "莫斯草皮 3 号。"
-		DecorationType.MOSS_4:
-			return "莫斯草皮 4 号。"
-		DecorationType.SAND_1:
-			return "浅色细沙，铺设缸底。"
-		DecorationType.SAND_2:
-			return "深色细沙，铺设缸底。"
+		# 装饰 (Ornament)
+		DecorationType.CONCH:
+			return "来自海洋的海螺壳。"
 		DecorationType.SEASHELL:
 			return "精美的贝壳。"
 		DecorationType.SHRIMP_AVE:
 			return "虾屋，为虾类提供住所。"
-		DecorationType.VALLISNERIA:
-			return "水兰，飘逸的长叶水草。"
+		# 底砂 (Substrate)
+		DecorationType.SAND_1:
+			return "浅色细沙，铺设缸底。"
+		DecorationType.SAND_2:
+			return "深色细沙，铺设缸底。"
 	return ""
 
 # 装饰类型分组枚举
@@ -198,9 +218,9 @@ enum TypeGroup {
 # 获取装饰所属的类型分组
 static func get_type_group(deco_type: DecorationType) -> TypeGroup:
 	match deco_type:
-		DecorationType.ANUBIAS, DecorationType.BUCEPHALANDRA, DecorationType.HYDRILLA, \
-		DecorationType.MOSS_1, DecorationType.MOSS_2, DecorationType.MOSS_3, DecorationType.MOSS_4, \
-		DecorationType.VALLISNERIA:
+		DecorationType.ANUBIAS, DecorationType.BUCEPHALANDRA, \
+		DecorationType.HYDRILLA, DecorationType.MOSS_1, DecorationType.MOSS_2, \
+		DecorationType.MOSS_3, DecorationType.MOSS_4, DecorationType.VALLISNERIA:
 			return TypeGroup.PLANT
 		DecorationType.CORAL_1, DecorationType.CORAL_2, DecorationType.CORAL_3, \
 		DecorationType.CORAL_BONE_1, DecorationType.CORAL_BONE_2:

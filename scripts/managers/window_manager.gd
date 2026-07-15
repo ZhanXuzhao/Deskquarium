@@ -43,7 +43,7 @@ const EDGE_LEFT := 1
 const EDGE_RIGHT := 2
 const EDGE_TOP := 4
 const EDGE_BOTTOM := 8
-const RESIZE_HANDLE_SIZE := 20
+const RESIZE_HANDLE_SIZE := 10
 const MIN_WINDOW_WIDTH := 100
 const MIN_WINDOW_HEIGHT := 50
 
@@ -54,7 +54,7 @@ var _tiny_near_top: bool = false
 var _tiny_near_bottom: bool = false
 
 const EDGE_HIGHLIGHT_COLOR := Color(1.0, 1.0, 0.3, 0.5)
-const EDGE_HIGHLIGHT_THICKNESS := 20.0
+const EDGE_HIGHLIGHT_THICKNESS := float(RESIZE_HANDLE_SIZE)
 
 const TINY_WIDTH := 400
 const TINY_HEIGHT := 200

@@ -222,7 +222,26 @@ func _eat_food(food: Node2D) -> void:
 func pick_new_target() -> void:
 	var margin := 50.0
 	var x := randf_range(aquarium_rect.position.x + margin, aquarium_rect.position.x + aquarium_rect.size.x - margin)
-	var y := randf_range(aquarium_rect.position.y + margin, aquarium_rect.position.y + aquarium_rect.size.y - margin)
+	
+	# 体型越大，越倾向在上层游动（Y值小）；体型越小，越倾向在下层游动（Y值大）
+	var base_size := FishData.get_base_size(species)
+	# 当前体型系数：level=0 时取 0.5，level=1.0 时取 1.0
+	var size_coeff := 0.5 + level * 0.5
+	var current_size := base_size * size_coeff
+	# 该鱼种的理论最小和最大体型
+	var min_size := base_size * 0.5
+	var max_size := base_size * 1.0
+	# 将当前体型映射到 [0,1]，0=该鱼种最小形态，1=该鱼种最大形态
+	var size_ratio := inverse_lerp(min_size, max_size, current_size)
+	# 体型越大(size_ratio→1)，越倾向上层(Y偏小)；体型越小(size_ratio→0)，越倾向下层(Y偏大)
+	# 加入随机扰动，使游动位置仍有自然变化
+	var depth_bias := 1.0 - size_ratio + randf_range(-0.2, 0.2)
+	depth_bias = clampf(depth_bias, 0.0, 1.0)
+	
+	var y_min := aquarium_rect.position.y + margin
+	var y_max := aquarium_rect.position.y + aquarium_rect.size.y - margin
+	var y: float = lerp(y_min, y_max, depth_bias)
+	
 	target_position = Vector2(x, y)
 
 

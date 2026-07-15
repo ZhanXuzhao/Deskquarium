@@ -1,6 +1,6 @@
 # 装饰物列表
 
-> 项目中共有 **18 种** 装饰物，代码定义在 `data/decoration_data.gd` 的 `DecorationType` 枚举中。
+> 项目中共有 **25 种** 装饰物，代码定义在 `data/decoration_data.gd` 的 `DecorationType` 枚举中。
 
 | # | 中文名 | 英文名（代码） | 类型 | 纹理文件 | 当前尺寸 | 生图尺寸 | 购买价 | 出售价 | 游戏内描述 | 生图描述（AI Prompt） |
 | :-: | :--- | :--- | :--- | :--- | :-: | :-: | :-: | :-: | :--- | :--- |
@@ -20,8 +20,15 @@
 | 14 | 海螺 | Conch | 装饰 (Ornament) | `deco_ornament_conch.png` | 256×256 | 256×256 | 60 | 30 | 来自海洋的海螺壳。 | pixel art seashell, conch spiral shell, light brown and white stripes, #00ff00 green background, game asset, centered |
 | 15 | 贝壳 | Seashell | 装饰 (Ornament) | `deco_ornament_seashell.png` | 256×256 | 256×256 | 70 | 35 | 精美的贝壳。 | pixel art seashell, scallop shell with ridges, light pink and white, #00ff00 green background, game asset, centered |
 | 16 | 虾屋 | ShrimpAve | 装饰 (Ornament) | `deco_ornament_shrimp_ave.png` | 256×256 | 256×256 | 90 | 45 | 虾屋，为虾类提供住所。 | pixel art shrimp hideout, small clay cave with round entrance, #00ff00 green background, game asset, centered |
-| 17 | 细沙（浅） | Sand1 | 底砂 (Substrate) | `deco_substrate_sand_1.png` | 256×256 | 256×64 | 40 | 20 | 浅色细沙，铺设缸底。 | pixel art substrate, light beige fine sand texture, #00ff00 green background, game asset, centered |
-| 18 | 细沙（深） | Sand2 | 底砂 (Substrate) | `deco_substrate_sand_2.png` | 256×256 | 256×64 | 40 | 20 | 深色细沙，铺设缸底。 | pixel art substrate, dark brown fine sand texture, #00ff00 green background, game asset, centered |
+| 17 | 螃蟹 | Crab | 装饰 (Ornament) | `deco_ornament_crab.png` | 256×256 | 256×256 | 100 | 50 | 红色的小螃蟹，在水底穿梭。 | pixel art crab, small red crab with claws, #00ff00 green background, game asset, centered |
+| 18 | 牡蛎 | Oyster | 装饰 (Ornament) | `deco_ornament_oyster.png` | 256×256 | 256×256 | 80 | 40 | 牡蛎壳，表面有独特的纹理。 | pixel art oyster shell, rough textured shell, #00ff00 green background, game asset, centered |
+| 19 | 石头 1 | Rock | 装饰 (Ornament) | `deco_ornament_rock.png` | 256×256 | 256×256 | 50 | 25 | 圆形的小石头。 | pixel art rock, round smooth stone, #00ff00 green background, game asset, centered |
+| 20 | 石头 2 | Rock2 | 装饰 (Ornament) | `deco_ornament_rock_2.png` | 256×256 | 256×256 | 55 | 27 | 不规则形状的石头。 | pixel art rock, irregular jagged stone, #00ff00 green background, game asset, centered |
+| 21 | 石头 3 | Rock3 | 装饰 (Ornament) | `deco_ornament_rock_3.png` | 256×256 | 256×256 | 60 | 30 | 扁平的石头，适合叠放。 | pixel art rock, flat smooth stone, #00ff00 green background, game asset, centered |
+| 22 | 扇贝 | Scallop | 装饰 (Ornament) | `deco_ornament_scallop.png` | 256×256 | 256×256 | 75 | 37 | 扇贝壳，造型优雅。 | pixel art scallop shell, fan-shaped shell with ridges, #00ff00 green background, game asset, centered |
+| 23 | 细沙（浅） | Sand1 | 底砂 (Substrate) | `deco_substrate_sand_1.png` | 256×256 | 256×64 | 40 | 20 | 浅色细沙，铺设缸底。 | pixel art substrate, light beige fine sand texture, #00ff00 green background, game asset, centered |
+| 24 | 细沙（深） | Sand2 | 底砂 (Substrate) | `deco_substrate_sand_2.png` | 256×256 | 256×64 | 40 | 20 | 深色细沙，铺设缸底。 | pixel art substrate, dark brown fine sand texture, #00ff00 green background, game asset, centered |
+| 25 | 细沙（中） | Sand3 | 底砂 (Substrate) | `deco_substrate_sand_3.png` | 256×256 | 256×64 | 45 | 22 | 中等色细沙，自然柔和。 | pixel art substrate, medium beige fine sand texture, #00ff00 green background, game asset, centered |
 
 > **备注：**
 > - 生图描述按照与鱼类一致的 `pixel art ... #00ff00 green background, game asset, centered` 风格编写，方便后续接入 ComfyUI 等工具进行 AI 批量生成。

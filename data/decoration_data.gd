@@ -21,9 +21,16 @@ enum DecorationType {
 	CONCH,
 	SEASHELL,
 	SHRIMP_AVE,
+	CRAB,
+	OYSTER,
+	ROCK,
+	ROCK_2,
+	ROCK_3,
+	SCALLOP,
 	# 底砂 (Substrate)
 	SAND_1,
 	SAND_2,
+	SAND_3,
 	COUNT,
 }
 
@@ -64,11 +71,25 @@ static func get_display_name(deco_type: DecorationType) -> String:
 			return "贝壳"
 		DecorationType.SHRIMP_AVE:
 			return "虾屋"
+		DecorationType.CRAB:
+			return "螃蟹"
+		DecorationType.OYSTER:
+			return "牡蛎"
+		DecorationType.ROCK:
+			return "石头 1"
+		DecorationType.ROCK_2:
+			return "石头 2"
+		DecorationType.ROCK_3:
+			return "石头 3"
+		DecorationType.SCALLOP:
+			return "扇贝"
 		# 底砂 (Substrate)
 		DecorationType.SAND_1:
 			return "细沙（浅）"
 		DecorationType.SAND_2:
 			return "细沙（深）"
+		DecorationType.SAND_3:
+			return "细沙（中）"
 	return ""
 
 static func get_cost(deco_type: DecorationType) -> int:
@@ -108,11 +129,25 @@ static func get_cost(deco_type: DecorationType) -> int:
 			return 70
 		DecorationType.SHRIMP_AVE:
 			return 90
+		DecorationType.CRAB:
+			return 100
+		DecorationType.OYSTER:
+			return 80
+		DecorationType.ROCK:
+			return 50
+		DecorationType.ROCK_2:
+			return 55
+		DecorationType.ROCK_3:
+			return 60
+		DecorationType.SCALLOP:
+			return 75
 		# 底砂 (Substrate)
 		DecorationType.SAND_1:
 			return 40
 		DecorationType.SAND_2:
 			return 40
+		DecorationType.SAND_3:
+			return 45
 	return 0
 
 static func get_texture_path(deco_type: DecorationType) -> String:
@@ -152,11 +187,25 @@ static func get_texture_path(deco_type: DecorationType) -> String:
 			return "res://assets/decorations/deco_ornament_seashell.png"
 		DecorationType.SHRIMP_AVE:
 			return "res://assets/decorations/deco_ornament_shrimp_ave.png"
+		DecorationType.CRAB:
+			return "res://assets/decorations/deco_ornament_crab.png"
+		DecorationType.OYSTER:
+			return "res://assets/decorations/deco_ornament_oyster.png"
+		DecorationType.ROCK:
+			return "res://assets/decorations/deco_ornament_rock.png"
+		DecorationType.ROCK_2:
+			return "res://assets/decorations/deco_ornament_rock_2.png"
+		DecorationType.ROCK_3:
+			return "res://assets/decorations/deco_ornament_rock_3.png"
+		DecorationType.SCALLOP:
+			return "res://assets/decorations/deco_ornament_scallop.png"
 		# 底砂 (Substrate)
 		DecorationType.SAND_1:
 			return "res://assets/decorations/deco_substrate_sand_1.png"
 		DecorationType.SAND_2:
 			return "res://assets/decorations/deco_substrate_sand_2.png"
+		DecorationType.SAND_3:
+			return "res://assets/decorations/deco_substrate_sand_3.png"
 	return ""
 
 static func get_sell_price(deco_type: DecorationType) -> int:
@@ -200,11 +249,25 @@ static func get_description(deco_type: DecorationType) -> String:
 			return "精美的贝壳。"
 		DecorationType.SHRIMP_AVE:
 			return "虾屋，为虾类提供住所。"
+		DecorationType.CRAB:
+			return "红色的小螃蟹，在水底穿梭。"
+		DecorationType.OYSTER:
+			return "牡蛎壳，表面有独特的纹理。"
+		DecorationType.ROCK:
+			return "圆形的小石头。"
+		DecorationType.ROCK_2:
+			return "不规则形状的石头。"
+		DecorationType.ROCK_3:
+			return "扁平的石头，适合叠放。"
+		DecorationType.SCALLOP:
+			return "扇贝壳，造型优雅。"
 		# 底砂 (Substrate)
 		DecorationType.SAND_1:
 			return "浅色细沙，铺设缸底。"
 		DecorationType.SAND_2:
 			return "深色细沙，铺设缸底。"
+		DecorationType.SAND_3:
+			return "中等色细沙，自然柔和。"
 	return ""
 
 # 装饰类型分组枚举
@@ -225,9 +288,11 @@ static func get_type_group(deco_type: DecorationType) -> TypeGroup:
 		DecorationType.CORAL_1, DecorationType.CORAL_2, DecorationType.CORAL_3, \
 		DecorationType.CORAL_BONE_1, DecorationType.CORAL_BONE_2:
 			return TypeGroup.CORAL
-		DecorationType.CONCH, DecorationType.SEASHELL, DecorationType.SHRIMP_AVE:
+		DecorationType.CONCH, DecorationType.SEASHELL, DecorationType.SHRIMP_AVE, \
+		DecorationType.CRAB, DecorationType.OYSTER, DecorationType.ROCK, \
+		DecorationType.ROCK_2, DecorationType.ROCK_3, DecorationType.SCALLOP:
 			return TypeGroup.ORNAMENT
-		DecorationType.SAND_1, DecorationType.SAND_2:
+		DecorationType.SAND_1, DecorationType.SAND_2, DecorationType.SAND_3:
 			return TypeGroup.SUBSTRATE
 	return TypeGroup.PLANT
 

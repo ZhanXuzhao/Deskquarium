@@ -32,6 +32,7 @@ var aquarium_bounds: Rect2:
 var _fish_shop_list: GridContainer
 var _deco_shop_list: GridContainer
 var _equip_shop_list: VBoxContainer
+var _deco_type_filters: Dictionary = {}  # DecorationData.TypeGroup -> CheckBox
 var _fish_info_panel: Panel = null
 var _fish_info_name: Label = null
 var _fish_info_name_en: Label = null
@@ -510,6 +511,27 @@ func _build_shop_panel(parent: Node, view_size: Vector2) -> void:
 
 	var deco_tab := VBoxContainer.new()
 	deco_tab.name = "装饰"
+
+	# 类型过滤勾选框
+	var deco_filter_hbox := HBoxContainer.new()
+	deco_filter_hbox.name = "DecoFilter"
+	deco_filter_hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	deco_filter_hbox.custom_minimum_size = Vector2(0, 28)
+
+	# 创建一个字典来存储所有过滤勾选框
+	_deco_type_filters = {}
+	for group in DecorationData.TypeGroup.values() as Array[int]:
+		var cb := CheckBox.new()
+		var name_cn := DecorationData.get_type_group_name(group)
+		var name_en := DecorationData.get_type_group_name_en(group)
+		cb.text = "%s (%s)" % [name_cn, name_en]
+		cb.button_pressed = true  # 默认全勾
+		cb.toggled.connect(_on_deco_filter_toggled)
+		deco_filter_hbox.add_child(cb)
+		_deco_type_filters[group] = cb
+
+	deco_tab.add_child(deco_filter_hbox)
+
 	var deco_scroll := ScrollContainer.new()
 	deco_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	deco_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -636,6 +658,11 @@ func _refresh_shop_ui() -> void:
 	for deco_type in DecorationData.DecorationType.values() as Array[int]:
 		if deco_type == DecorationData.DecorationType.COUNT:
 			continue
+		# 类型过滤：检查该装饰的类型分组是否被勾选
+		var group := DecorationData.get_type_group(deco_type)
+		var cb: CheckBox = _deco_type_filters.get(group)
+		if cb != null and not cb.button_pressed:
+			continue
 		_add_deco_shop_entry(_deco_shop_list, deco_type)
 
 	for eq_type in EquipmentData.EquipmentType.values() as Array[int]:
@@ -684,6 +711,10 @@ func _buy_decoration(deco_type: int) -> void:
 
 
 
+
+
+func _on_deco_filter_toggled(_toggled: bool) -> void:
+	_refresh_shop_ui()
 
 
 func _add_equip_shop_entry(parent: VBoxContainer, eq_type: int) -> void:

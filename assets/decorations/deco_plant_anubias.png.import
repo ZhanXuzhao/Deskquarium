@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cf5tj1fahdaev"
-path="res://.godot/imported/deco_coral_bone_2.png-0e50cfd4140896397b2de60270624bc6.ctex"
+uid="uid://c05eyjoarkffs"
+path="res://.godot/imported/deco_plant_anubias.png-888cd360fc8464115102ae39cc42bc39.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/decorations/deco_coral_bone_2.png"
-dest_files=["res://.godot/imported/deco_coral_bone_2.png-0e50cfd4140896397b2de60270624bc6.ctex"]
+source_file="res://assets/decorations/deco_plant_anubias.png"
+dest_files=["res://.godot/imported/deco_plant_anubias.png-888cd360fc8464115102ae39cc42bc39.ctex"]
 
 [params]
 

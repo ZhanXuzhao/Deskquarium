@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://byaipor6fvy6p"
-path="res://.godot/imported/deco_shrimp_ave.png-ec6154ec3f5489e67b697374ad7de7a1.ctex"
+uid="uid://wn7xdxyecy1e"
+path="res://.godot/imported/deco_coral_coral_bone_1.png-a565409ea92c861aa429bc94ae8ffc80.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/decorations/deco_shrimp_ave.png"
-dest_files=["res://.godot/imported/deco_shrimp_ave.png-ec6154ec3f5489e67b697374ad7de7a1.ctex"]
+source_file="res://assets/decorations/deco_coral_coral_bone_1.png"
+dest_files=["res://.godot/imported/deco_coral_coral_bone_1.png-a565409ea92c861aa429bc94ae8ffc80.ctex"]
 
 [params]
 

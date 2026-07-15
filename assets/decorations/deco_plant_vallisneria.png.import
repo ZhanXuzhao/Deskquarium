@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://y4gsyal2nhfp"
-path="res://.godot/imported/deco_coral_2.png-8210d8ada3b348057d29221a63bc4488.ctex"
+uid="uid://c5biwj5btpy5m"
+path="res://.godot/imported/deco_plant_vallisneria.png-c34c6f8945ec094f23949ff98d512f51.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/decorations/deco_coral_2.png"
-dest_files=["res://.godot/imported/deco_coral_2.png-8210d8ada3b348057d29221a63bc4488.ctex"]
+source_file="res://assets/decorations/deco_plant_vallisneria.png"
+dest_files=["res://.godot/imported/deco_plant_vallisneria.png-c34c6f8945ec094f23949ff98d512f51.ctex"]
 
 [params]
 

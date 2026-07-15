@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c05eyjoarkffs"
-path="res://.godot/imported/deco_anubias.png-59983df761e7eda6120baa00a6f5cfed.ctex"
+uid="uid://c37dgkclvricw"
+path="res://.godot/imported/deco_plant_moss_3.png-0fee090f96597ace799d2c2fbd1b1040.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/decorations/deco_anubias.png"
-dest_files=["res://.godot/imported/deco_anubias.png-59983df761e7eda6120baa00a6f5cfed.ctex"]
+source_file="res://assets/decorations/deco_plant_moss_3.png"
+dest_files=["res://.godot/imported/deco_plant_moss_3.png-0fee090f96597ace799d2c2fbd1b1040.ctex"]
 
 [params]
 

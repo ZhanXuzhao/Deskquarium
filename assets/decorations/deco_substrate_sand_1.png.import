@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://oyf4kw3nw5l"
-path="res://.godot/imported/deco_hydrilla.png-f061bc21713691fc1eb4c88a156db435.ctex"
+uid="uid://bq6sydx874k24"
+path="res://.godot/imported/deco_substrate_sand_1.png-140fab9fc8b28012f0b3b77c5ffbb5b0.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/decorations/deco_hydrilla.png"
-dest_files=["res://.godot/imported/deco_hydrilla.png-f061bc21713691fc1eb4c88a156db435.ctex"]
+source_file="res://assets/decorations/deco_substrate_sand_1.png"
+dest_files=["res://.godot/imported/deco_substrate_sand_1.png-140fab9fc8b28012f0b3b77c5ffbb5b0.ctex"]
 
 [params]
 

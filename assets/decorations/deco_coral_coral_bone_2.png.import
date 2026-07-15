@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bdftd3dqpd5vx"
-path="res://.godot/imported/deco_seashell.png-a28c84a58497b3af60cfcba8c54c5ed4.ctex"
+uid="uid://cf5tj1fahdaev"
+path="res://.godot/imported/deco_coral_coral_bone_2.png-b086616fda54501d461af38db768bb40.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/decorations/deco_seashell.png"
-dest_files=["res://.godot/imported/deco_seashell.png-a28c84a58497b3af60cfcba8c54c5ed4.ctex"]
+source_file="res://assets/decorations/deco_coral_coral_bone_2.png"
+dest_files=["res://.godot/imported/deco_coral_coral_bone_2.png-b086616fda54501d461af38db768bb40.ctex"]
 
 [params]
 

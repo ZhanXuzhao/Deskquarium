@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://wn7xdxyecy1e"
-path="res://.godot/imported/deco_coral_bone_1.png-1252ac4a48ade755c95cd8048b2ace74.ctex"
+uid="uid://vbcmi326uqnu"
+path="res://.godot/imported/deco_plant_bucephalandra.png-aab7a3da7d5d3cab624fcc9466a3ae5a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/decorations/deco_coral_bone_1.png"
-dest_files=["res://.godot/imported/deco_coral_bone_1.png-1252ac4a48ade755c95cd8048b2ace74.ctex"]
+source_file="res://assets/decorations/deco_plant_bucephalandra.png"
+dest_files=["res://.godot/imported/deco_plant_bucephalandra.png-aab7a3da7d5d3cab624fcc9466a3ae5a.ctex"]
 
 [params]
 

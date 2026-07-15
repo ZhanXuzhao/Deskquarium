@@ -106,41 +106,41 @@ static func get_cost(deco_type: DecorationType) -> int:
 static func get_texture_path(deco_type: DecorationType) -> String:
 	match deco_type:
 		DecorationType.ANUBIAS:
-			return "res://assets/decorations/deco_anubias.png"
+			return "res://assets/decorations/deco_plant_anubias.png"
 		DecorationType.BUCEPHALANDRA:
-			return "res://assets/decorations/deco_bucephalandra.png"
+			return "res://assets/decorations/deco_plant_bucephalandra.png"
 		DecorationType.CONCH:
-			return "res://assets/decorations/deco_conch.png"
+			return "res://assets/decorations/deco_ornament_conch.png"
 		DecorationType.CORAL_1:
-			return "res://assets/decorations/deco_coral_1.png"
+			return "res://assets/decorations/deco_coral_coral_1.png"
 		DecorationType.CORAL_2:
-			return "res://assets/decorations/deco_coral_2.png"
+			return "res://assets/decorations/deco_coral_coral_2.png"
 		DecorationType.CORAL_3:
-			return "res://assets/decorations/deco_coral_3.png"
+			return "res://assets/decorations/deco_coral_coral_3.png"
 		DecorationType.CORAL_BONE_1:
-			return "res://assets/decorations/deco_coral_bone_1.png"
+			return "res://assets/decorations/deco_coral_coral_bone_1.png"
 		DecorationType.CORAL_BONE_2:
-			return "res://assets/decorations/deco_coral_bone_2.png"
+			return "res://assets/decorations/deco_coral_coral_bone_2.png"
 		DecorationType.HYDRILLA:
-			return "res://assets/decorations/deco_hydrilla.png"
+			return "res://assets/decorations/deco_plant_hydrilla.png"
 		DecorationType.MOSS_1:
-			return "res://assets/decorations/deco_moss_1.png"
+			return "res://assets/decorations/deco_plant_moss_1.png"
 		DecorationType.MOSS_2:
-			return "res://assets/decorations/deco_moss_2.png"
+			return "res://assets/decorations/deco_plant_moss_2.png"
 		DecorationType.MOSS_3:
-			return "res://assets/decorations/deco_moss_3.png"
+			return "res://assets/decorations/deco_plant_moss_3.png"
 		DecorationType.MOSS_4:
-			return "res://assets/decorations/deco_moss_4.png"
+			return "res://assets/decorations/deco_plant_moss_4.png"
 		DecorationType.SAND_1:
-			return "res://assets/decorations/deco_sand_1.png"
+			return "res://assets/decorations/deco_substrate_sand_1.png"
 		DecorationType.SAND_2:
-			return "res://assets/decorations/deco_sand_2.png"
+			return "res://assets/decorations/deco_substrate_sand_2.png"
 		DecorationType.SEASHELL:
-			return "res://assets/decorations/deco_seashell.png"
+			return "res://assets/decorations/deco_ornament_seashell.png"
 		DecorationType.SHRIMP_AVE:
-			return "res://assets/decorations/deco_shrimp_ave.png"
+			return "res://assets/decorations/deco_ornament_shrimp_ave.png"
 		DecorationType.VALLISNERIA:
-			return "res://assets/decorations/deco_vallisneria.png"
+			return "res://assets/decorations/deco_plant_vallisneria.png"
 	return ""
 
 static func get_sell_price(deco_type: DecorationType) -> int:
@@ -185,4 +185,54 @@ static func get_description(deco_type: DecorationType) -> String:
 			return "虾屋，为虾类提供住所。"
 		DecorationType.VALLISNERIA:
 			return "水兰，飘逸的长叶水草。"
+	return ""
+
+# 装饰类型分组枚举
+enum TypeGroup {
+	PLANT,     # 水草
+	CORAL,     # 珊瑚
+	ORNAMENT,  # 装饰
+	SUBSTRATE, # 底砂
+}
+
+# 获取装饰所属的类型分组
+static func get_type_group(deco_type: DecorationType) -> TypeGroup:
+	match deco_type:
+		DecorationType.ANUBIAS, DecorationType.BUCEPHALANDRA, DecorationType.HYDRILLA, \
+		DecorationType.MOSS_1, DecorationType.MOSS_2, DecorationType.MOSS_3, DecorationType.MOSS_4, \
+		DecorationType.VALLISNERIA:
+			return TypeGroup.PLANT
+		DecorationType.CORAL_1, DecorationType.CORAL_2, DecorationType.CORAL_3, \
+		DecorationType.CORAL_BONE_1, DecorationType.CORAL_BONE_2:
+			return TypeGroup.CORAL
+		DecorationType.CONCH, DecorationType.SEASHELL, DecorationType.SHRIMP_AVE:
+			return TypeGroup.ORNAMENT
+		DecorationType.SAND_1, DecorationType.SAND_2:
+			return TypeGroup.SUBSTRATE
+	return TypeGroup.PLANT
+
+# 获取类型分组的中文显示名
+static func get_type_group_name(group: TypeGroup) -> String:
+	match group:
+		TypeGroup.PLANT:
+			return "水草"
+		TypeGroup.CORAL:
+			return "珊瑚"
+		TypeGroup.ORNAMENT:
+			return "装饰"
+		TypeGroup.SUBSTRATE:
+			return "底砂"
+	return ""
+
+# 获取类型分组的英文名
+static func get_type_group_name_en(group: TypeGroup) -> String:
+	match group:
+		TypeGroup.PLANT:
+			return "Plant"
+		TypeGroup.CORAL:
+			return "Coral"
+		TypeGroup.ORNAMENT:
+			return "Ornament"
+		TypeGroup.SUBSTRATE:
+			return "Substrate"
 	return ""

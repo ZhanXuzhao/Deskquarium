@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ch2ldlu1318kp"
-path="res://.godot/imported/deco_sand_2.png-25ab79a6816079d135012fcc820bd61c.ctex"
+uid="uid://cpc0q3txy2ciu"
+path="res://.godot/imported/deco_plant_moss_2.png-a84578a3a6fa4dd9a36594be7ad59a6b.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/decorations/deco_sand_2.png"
-dest_files=["res://.godot/imported/deco_sand_2.png-25ab79a6816079d135012fcc820bd61c.ctex"]
+source_file="res://assets/decorations/deco_plant_moss_2.png"
+dest_files=["res://.godot/imported/deco_plant_moss_2.png-a84578a3a6fa4dd9a36594be7ad59a6b.ctex"]
 
 [params]
 

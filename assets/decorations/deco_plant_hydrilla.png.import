@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c3lteoqwo3tnw"
-path="res://.godot/imported/deco_coral_3.png-34b0de77511848d72d46979272124fba.ctex"
+uid="uid://oyf4kw3nw5l"
+path="res://.godot/imported/deco_plant_hydrilla.png-3774c6c4d56f5d079034c9f4ee9a9503.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/decorations/deco_coral_3.png"
-dest_files=["res://.godot/imported/deco_coral_3.png-34b0de77511848d72d46979272124fba.ctex"]
+source_file="res://assets/decorations/deco_plant_hydrilla.png"
+dest_files=["res://.godot/imported/deco_plant_hydrilla.png-3774c6c4d56f5d079034c9f4ee9a9503.ctex"]
 
 [params]
 

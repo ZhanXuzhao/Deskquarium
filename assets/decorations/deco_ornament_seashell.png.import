@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cqiuf5q3bwy5"
-path="res://.godot/imported/deco_conch.png-ec5789127deb3433aa1ab4647a58ca68.ctex"
+uid="uid://bdftd3dqpd5vx"
+path="res://.godot/imported/deco_ornament_seashell.png-1fbcc3fcb9fdae073a2483c103461074.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/decorations/deco_conch.png"
-dest_files=["res://.godot/imported/deco_conch.png-ec5789127deb3433aa1ab4647a58ca68.ctex"]
+source_file="res://assets/decorations/deco_ornament_seashell.png"
+dest_files=["res://.godot/imported/deco_ornament_seashell.png-1fbcc3fcb9fdae073a2483c103461074.ctex"]
 
 [params]
 

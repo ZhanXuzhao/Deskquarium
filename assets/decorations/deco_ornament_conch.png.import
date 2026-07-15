@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://vbcmi326uqnu"
-path="res://.godot/imported/deco_bucephalandra.png-a1b6a99f50e91525dcbf97e3a106639c.ctex"
+uid="uid://cqiuf5q3bwy5"
+path="res://.godot/imported/deco_ornament_conch.png-045883dd69e2dcfde4cb36158b51fc79.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/decorations/deco_bucephalandra.png"
-dest_files=["res://.godot/imported/deco_bucephalandra.png-a1b6a99f50e91525dcbf97e3a106639c.ctex"]
+source_file="res://assets/decorations/deco_ornament_conch.png"
+dest_files=["res://.godot/imported/deco_ornament_conch.png-045883dd69e2dcfde4cb36158b51fc79.ctex"]
 
 [params]
 

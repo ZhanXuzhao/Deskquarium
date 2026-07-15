@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bq6sydx874k24"
-path="res://.godot/imported/deco_sand_1.png-a6e3e085f4fe6ae59dfe6b0b500b43bb.ctex"
+uid="uid://y4gsyal2nhfp"
+path="res://.godot/imported/deco_coral_coral_2.png-1da491620e26487c334167b197188177.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/decorations/deco_sand_1.png"
-dest_files=["res://.godot/imported/deco_sand_1.png-a6e3e085f4fe6ae59dfe6b0b500b43bb.ctex"]
+source_file="res://assets/decorations/deco_coral_coral_2.png"
+dest_files=["res://.godot/imported/deco_coral_coral_2.png-1da491620e26487c334167b197188177.ctex"]
 
 [params]
 

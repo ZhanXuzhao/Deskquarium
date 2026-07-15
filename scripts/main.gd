@@ -961,7 +961,8 @@ func _refresh_fish_info_panel() -> void:
 	var f := _selected_fish
 	var species: int = f.species
 	var lv: int = f.get_level()
-	var hunger_pct: int = int(f.hunger * 100)
+	var max_h := FishData.get_max_hunger(species)
+	var hunger_pct: int = int(f.hunger / max_h * 100)
 
 	# Find index of selected fish in container
 	var fish_list := fish_container.get_children()

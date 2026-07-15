@@ -42,9 +42,11 @@ func _try_auto_feed() -> void:
 	if fish_container:
 		var any_hungry := false
 		for fish in fish_container.get_children():
-			if fish.has_method("get_hunger") and fish.hunger < 0.5:
-				any_hungry = true
-				break
+			if fish.has_method("get_hunger"):
+				var max_h := FishData.get_max_hunger(fish.species)
+				if fish.hunger < max_h * 0.5:
+					any_hungry = true
+					break
 		if not any_hungry:
 			return
 	

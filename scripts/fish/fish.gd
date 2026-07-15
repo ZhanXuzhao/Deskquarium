@@ -118,7 +118,8 @@ func _swim(delta: float) -> void:
 		return
 	
 	# Look for food on the bottom when hungry
-	if hunger < 90.0:
+	var max_h_swim := FishData.get_max_hunger(species)
+	if hunger < max_h_swim * 0.9:
 		var food_container := get_parent().get_parent().get_node_or_null("FoodContainer") as Node2D
 		if food_container and food_container.get_child_count() > 0:
 			var nearest: Node2D = null
@@ -293,7 +294,7 @@ func feed() -> void:
 
 
 func set_food_target(food: Node2D) -> void:
-	if hunger >= 90.0:
+	if hunger >= FishData.get_max_hunger(species) * 0.9:
 		return
 	
 	if food is FoodPellet and food.consumed:

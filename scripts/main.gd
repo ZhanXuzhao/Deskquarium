@@ -494,11 +494,6 @@ func _update_ui_positions() -> void:
 					break
 
 	# Shop panel
-	var shop_bg := _ui_container.get_node_or_null("ShopBg") as ColorRect
-	if shop_bg:
-		shop_bg.size = view_size
-		shop_bg.position = Vector2.ZERO
-
 	var shop_panel := _ui_container.get_node_or_null("ShopPanel") as Panel
 	if shop_panel:
 		shop_panel.position = Vector2(view_size.x / 2 - 500, view_size.y / 2 - 420)
@@ -584,15 +579,6 @@ func _build_hud(parent: Node, view_size: Vector2) -> void:
 
 
 func _build_shop_panel(parent: Node, view_size: Vector2) -> void:
-	var shop_bg := ColorRect.new()
-	shop_bg.name = "ShopBg"
-	shop_bg.color = Color(0, 0, 0, 0.5)
-	shop_bg.size = view_size
-	shop_bg.position = Vector2.ZERO
-	shop_bg.visible = false
-	shop_bg.mouse_filter = Control.MOUSE_FILTER_STOP
-	parent.add_child(shop_bg)
-
 	var shop_panel := Panel.new()
 	shop_panel.name = "ShopPanel"
 	shop_panel.size = Vector2(1000, 840)
@@ -829,10 +815,7 @@ func _show_all_ui() -> void:
 		return
 	_ui_container.visible = true
 	# 按当前状态隐藏不应显示的面板
-	var shop_bg := _ui_container.get_node_or_null("ShopBg") as ColorRect
 	var shop_panel_node := _ui_container.get_node_or_null("ShopPanel") as Panel
-	if shop_bg:
-		shop_bg.visible = shop_panel_open
 	if shop_panel_node:
 		shop_panel_node.visible = shop_panel_open
 	if _fish_info_panel:
@@ -1118,7 +1101,6 @@ func toggle_shop() -> void:
 		return
 	shop_panel_open = not shop_panel_open
 	if is_instance_valid(_ui_container):
-		_ui_container.get_node("ShopBg").visible = shop_panel_open
 		_ui_container.get_node("ShopPanel").visible = shop_panel_open
 
 	if shop_panel_open:
@@ -1858,20 +1840,6 @@ func _open_auto_buy_settings() -> void:
 		_close_auto_buy_settings()
 		return
 	
-	# 创建背景遮罩
-	var bg := ColorRect.new()
-	bg.name = "AutoBuySettingsBg"
-	bg.color = Color(0, 0, 0, 0.5)
-	bg.size = get_viewport_rect().size
-	bg.position = Vector2.ZERO
-	bg.visible = true
-	bg.mouse_filter = Control.MOUSE_FILTER_STOP
-	bg.gui_input.connect(func(event: InputEvent):
-		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			_close_auto_buy_settings()
-	)
-	_ui_container.add_child(bg)
-	
 	var panel := Panel.new()
 	panel.name = "AutoBuySettings"
 	panel.size = Vector2(800, 660)
@@ -1926,9 +1894,6 @@ func _open_auto_buy_settings() -> void:
 
 func _close_auto_buy_settings() -> void:
 	if is_instance_valid(_ui_container):
-		var bg := _ui_container.get_node_or_null("AutoBuySettingsBg")
-		if bg:
-			bg.queue_free()
 		var panel := _ui_container.get_node_or_null("AutoBuySettings")
 		if panel:
 			panel.queue_free()

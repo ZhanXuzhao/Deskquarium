@@ -29,6 +29,7 @@ var direction: float = 1.0
 @onready var area: Area2D = $Area2D
 @onready var hunger_timer: Timer = $HungerTimer
 @onready var state_timer: Timer = $StateTimer
+@onready var depth_timer: Timer = $DepthTimer
 @onready var collision_shape: CollisionShape2D = $Area2D/CollisionShape2D
 
 var aquarium_rect: Rect2 = Rect2(50, 50, 700, 450)
@@ -49,6 +50,11 @@ func _ready() -> void:
 	area.input_event.connect(_on_input_event)
 	area.mouse_entered.connect(_on_mouse_entered)
 	area.mouse_exited.connect(_on_mouse_exited)
+	
+	# 深度层级定时器：每隔 1-3 分钟随机刷新一次 z_index
+	_restart_depth_timer()
+	_update_depth_layer()
+	
 	modulate.a = 0.0
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 1.0, 0.5)
@@ -73,8 +79,6 @@ func _update_appearance() -> void:
 
 
 func _process(delta: float) -> void:
-	_update_depth_layer()
-	
 	match state:
 		FishState.SWIMMING:
 			_swim(delta)
@@ -208,6 +212,20 @@ func _update_depth_layer() -> void:
 	var t := inverse_lerp(0.0, Global.DESIGN_HEIGHT, position.y)
 	t = clampf(t, 0.0, 1.0)
 	z_index = int(lerp(0.0, float(max_deco_z + 1), t))
+
+
+# ── 定时刷新深度层级 ──────────────────────────────────────────────────────
+# 每隔 1-3 分钟重新随机设置鱼的 z_index，在装饰物前后自然穿插
+
+func _on_depth_timeout() -> void:
+	_update_depth_layer()
+	_restart_depth_timer()
+
+
+func _restart_depth_timer() -> void:
+	var interval := randf_range(60.0, 180.0)  # 1~3 分钟
+	depth_timer.wait_time = interval
+	depth_timer.start()
 
 
 func get_level() -> int:

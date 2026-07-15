@@ -19,5 +19,10 @@ autostart = true
 wait_time = 2.0
 autostart = true
 
+[node name="DepthTimer" type="Timer" parent="."]
+wait_time = 120.0
+one_shot = true
+
 [connection signal="timeout" from="HungerTimer" to="." method="_on_hunger_timeout"]
 [connection signal="timeout" from="StateTimer" to="." method="_on_state_timeout"]
+[connection signal="timeout" from="DepthTimer" to="." method="_on_depth_timeout"]

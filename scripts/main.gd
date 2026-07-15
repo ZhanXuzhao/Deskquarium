@@ -46,6 +46,7 @@ var _fish_info_sell_btn: Button = null
 var _timescale_label: Label = null
 var _game_menu_panel: Panel = null
 var _game_menu_bg: ColorRect = null
+var _fish_scale_label: Label = null
 var _menu_open: bool = false
 
 var _coin_label: Label
@@ -2065,26 +2066,48 @@ func _build_game_menu(parent: Node, view_size: Vector2) -> void:
 	)
 
 	# ── 鱼缩放比例 ──
-	var scale_label := Label.new()
-	scale_label.text = "鱼缩放: 1.0x"
-	scale_label.name = "FishScaleLabel"
-	scale_label.position = Vector2(20, 178)
-	scale_label.add_theme_font_size_override("font_size", 12)
-	_game_menu_panel.add_child(scale_label)
+	_fish_scale_label = Label.new()
+	_fish_scale_label.text = "鱼缩放: %.1fx" % Global.fish_scale
+	_fish_scale_label.name = "FishScaleLabel"
+	_fish_scale_label.position = Vector2(20, 178)
+	_fish_scale_label.add_theme_font_size_override("font_size", 12)
+	_game_menu_panel.add_child(_fish_scale_label)
+
+	var dec_btn := Button.new()
+	dec_btn.text = "<"
+	dec_btn.position = Vector2(20, 196)
+	dec_btn.size = Vector2(30, 28)
+	_game_menu_panel.add_child(dec_btn)
+	dec_btn.pressed.connect(func():
+		var v: float = snapped(Global.fish_scale - 0.1, 0.1)
+		Global.fish_scale = v
+		_fish_scale_label.text = "鱼缩放: %.1fx" % v
+	)
 
 	var scale_slider := HSlider.new()
 	scale_slider.name = "FishScaleSlider"
-	scale_slider.position = Vector2(20, 196)
-	scale_slider.size = Vector2(180, 28)
+	scale_slider.position = Vector2(55, 196)
+	scale_slider.size = Vector2(110, 28)
 	scale_slider.min_value = 0.5
-	scale_slider.max_value = 10.0
+	scale_slider.max_value = 5.0
 	scale_slider.step = 0.1
 	scale_slider.value = Global.fish_scale
 	_game_menu_panel.add_child(scale_slider)
 	scale_slider.value_changed.connect(func(value: float):
-		value = snapped(value, 0.1)
-		Global.fish_scale = value
-		scale_label.text = "鱼缩放: %.1fx" % value
+		var v: float = snapped(value, 0.1)
+		Global.fish_scale = v
+		_fish_scale_label.text = "鱼缩放: %.1fx" % v
+	)
+
+	var inc_btn := Button.new()
+	inc_btn.text = ">"
+	inc_btn.position = Vector2(170, 196)
+	inc_btn.size = Vector2(30, 28)
+	_game_menu_panel.add_child(inc_btn)
+	inc_btn.pressed.connect(func():
+		var v: float = snapped(Global.fish_scale + 0.1, 0.1)
+		Global.fish_scale = v
+		_fish_scale_label.text = "鱼缩放: %.1fx" % v
 	)
 
 
@@ -2092,6 +2115,8 @@ func _toggle_game_menu() -> void:
 	_menu_open = not _menu_open
 	_game_menu_bg.visible = _menu_open
 	_game_menu_panel.visible = _menu_open
+	if _menu_open and _fish_scale_label:
+		_fish_scale_label.text = "鱼缩放: %.1fx" % Global.fish_scale
 
 
 func _on_menu_bg_input(event: InputEvent) -> void:

@@ -197,7 +197,7 @@ var startup_mode: int = STARTUP_NORMAL:
 
 var fish_scale: float = 1.0:
 	set(value):
-		fish_scale = clampf(value, 0.5, 10.0)
+		fish_scale = clampf(value, 0.5, 5.0)
 		save_dirty = true
 
 var tiny_window_size: Vector2i = Vector2i.ZERO

@@ -45,7 +45,7 @@ func start_placement(deco_type: int) -> void:
 	_placement_preview.z_index = 10
 	decoration_container.add_child(_placement_preview)
 	
-	_update_preview()
+	update_preview()
 	placement_started.emit(deco_type)
 
 
@@ -80,7 +80,7 @@ func update_preview() -> void:
 		return
 	var mouse_pos := get_global_mouse_position()
 	var local_pos := aquarium.to_local(mouse_pos)
-	var bounds := aquarium_bounds_getter.call()
+	var bounds: Rect2 = aquarium_bounds_getter.call()
 	var margin := 20.0
 	var clamped_x := clampf(local_pos.x, margin, bounds.size.x - margin)
 	var clamped_y := clampf(local_pos.y, bounds.size.y * 0.3, bounds.size.y - margin)
@@ -101,14 +101,14 @@ func restore_from_save() -> void:
 			var deco_scale := Vector2(dict.get("scale_x", 0.5), dict.get("scale_y", 0.5))
 			var z_idx: int = dict.get("z_index", 0)
 			if pos == Vector2.ZERO and dict.get("x", 0) == 0 and dict.get("y", 0) == 0:
-				var bounds := aquarium_bounds_getter.call()
+				var bounds: Rect2 = aquarium_bounds_getter.call()
 				var margin := 100.0
 				pos.x = randf_range(margin, bounds.size.x - margin)
 				pos.y = randf_range(bounds.size.y * 0.4, bounds.size.y - 20.0)
 			_place_decoration(deco_type, pos, deco_scale, z_idx)
 		else:
 			var deco_type: int = d
-			var bounds := aquarium_bounds_getter.call()
+			var bounds: Rect2 = aquarium_bounds_getter.call()
 			var margin := 100.0
 			var x := randf_range(margin, bounds.size.x - margin)
 			var y := randf_range(bounds.size.y * 0.4, bounds.size.y - 20.0)
@@ -151,7 +151,7 @@ func _connect_decoration_interaction(deco: Sprite2D) -> void:
 		if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
 			return
 		if Global.move_mode and aquarium_ref:
-			aqua_ref._handle_decoration_input(deco, event)
+			aquarium_ref._handle_decoration_input(deco, event)
 			return
 		if not Global.sell_mode:
 			return

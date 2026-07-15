@@ -67,7 +67,6 @@ func _ready() -> void:
 	get_window().size_changed.connect(_on_window_resized)
 
 	_setup_background_layer()
-	_setup_ui()
 	
 	# 初始化 WindowManager
 	var wm := WindowManager.new()
@@ -80,7 +79,7 @@ func _ready() -> void:
 	_window_manager.redraw_requested.connect(queue_redraw)
 	_window_manager.after_ui_shown.connect(_on_window_mode_ui_shown)
 	
-	# 初始化 FeedManager
+	# 初始化 FeedManager (必须在 _setup_ui 之前，因为侧边栏按钮会引用它)
 	var fm := FeedManager.new()
 	fm.name = "FeedManager"
 	add_child(fm)
@@ -91,7 +90,7 @@ func _ready() -> void:
 	_feed_manager.ui_container = _ui_container
 	_feed_manager.aquarium_bounds_getter = func() -> Rect2: return aquarium_bounds
 	
-	# 初始化 DecorationPlacer
+	# 初始化 DecorationPlacer (必须在 _setup_ui 之前)
 	var dp := DecorationPlacer.new()
 	dp.name = "DecorationPlacer"
 	add_child(dp)
@@ -100,6 +99,8 @@ func _ready() -> void:
 	_decoration_placer.decoration_container = decoration_container
 	_decoration_placer.aquarium_ref = $Aquarium as Aquarium
 	_decoration_placer.aquarium_bounds_getter = func() -> Rect2: return aquarium_bounds
+
+	_setup_ui()
 
 	# 初始缩放
 	call_deferred(&"_update_aquarium_scale")

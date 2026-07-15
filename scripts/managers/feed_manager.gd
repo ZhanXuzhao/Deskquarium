@@ -96,7 +96,7 @@ func do_feed() -> void:
 		return
 	if not Global.spend(10):
 		return
-	var bounds := aquarium_bounds_getter.call()
+	var bounds: Rect2 = aquarium_bounds_getter.call()
 	for i in 10:
 		var pellet := _pellet_scene.instantiate()
 		pellet.set_script(_pellet_script)
@@ -136,7 +136,7 @@ func _place_food_at_mouse() -> void:
 	
 	var mouse_pos := get_global_mouse_position()
 	var local_pos := aquarium.to_local(mouse_pos)
-	var bounds := aquarium_bounds_getter.call()
+	var bounds: Rect2 = aquarium_bounds_getter.call()
 	
 	var margin := 20.0
 	var clamped_x := clampf(local_pos.x, margin, bounds.size.x - margin)

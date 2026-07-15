@@ -1874,8 +1874,8 @@ func _open_auto_buy_settings() -> void:
 	
 	var panel := Panel.new()
 	panel.name = "AutoBuySettings"
-	panel.size = Vector2(400, 300)
-	panel.position = Vector2(get_viewport_rect().size.x / 2 - 200, get_viewport_rect().size.y / 2 - 150)
+	panel.size = Vector2(800, 660)
+	panel.position = Vector2(get_viewport_rect().size.x / 2 - 400, get_viewport_rect().size.y / 2 - 330)
 	_ui_container.add_child(panel)
 	_auto_buy_settings_panel = panel
 	
@@ -1887,79 +1887,37 @@ func _open_auto_buy_settings() -> void:
 	
 	var close_btn := Button.new()
 	close_btn.text = "关闭"
-	close_btn.position = Vector2(330, 10)
+	close_btn.position = Vector2(730, 10)
 	close_btn.size = Vector2(60, 24)
 	close_btn.pressed.connect(_close_auto_buy_settings)
 	panel.add_child(close_btn)
 	
 	var scroll := ScrollContainer.new()
 	scroll.position = Vector2(10, 45)
-	scroll.size = Vector2(380, 210)
+	scroll.size = Vector2(780, 560)
 	panel.add_child(scroll)
 	
-	var list := VBoxContainer.new()
-	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(list)
+	var grid := GridContainer.new()
+	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grid.columns = 5
+	scroll.add_child(grid)
 	
-	var targets: Dictionary = Global.auto_buy_targets
+	var card_scene := preload("res://scenes/ui/autobuy_card/autobuy_card.tscn")
 	for species in FishData.Species.values() as Array[int]:
 		if species == FishData.Species.COUNT:
 			continue
-		if not Global.unlocked_species[species]:
-			continue
 		
-		var row := HBoxContainer.new()
-		row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		row.custom_minimum_size = Vector2(0, 36)
-		row.add_theme_constant_override("separation", 8)
-		
-		var name_label := Label.new()
-		name_label.text = FishData.get_species_name(species)
-		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_label.add_theme_font_size_override("font_size", 14)
-		row.add_child(name_label)
-		
-		var count_label := Label.new()
-		var current_target: int = targets.get(species, 0)
-		count_label.text = "目标: %d" % current_target
-		count_label.add_theme_font_size_override("font_size", 13)
-		row.add_child(count_label)
-		
-		var dec_btn := Button.new()
-		dec_btn.text = "−"
-		dec_btn.size = Vector2(30, 28)
-		dec_btn.add_theme_font_size_override("font_size", 14)
-		row.add_child(dec_btn)
-		
-		var inc_btn := Button.new()
-		inc_btn.text = "+"
-		inc_btn.size = Vector2(30, 28)
-		inc_btn.add_theme_font_size_override("font_size", 14)
-		row.add_child(inc_btn)
-		
-		var s := species
-		dec_btn.pressed.connect(func():
-			var t: Dictionary = Global.auto_buy_targets
-			var cur: int = t.get(s, 0)
-			if cur > 0:
-				t[s] = cur - 1
-				Global.auto_buy_targets = t
-				count_label.text = "目标: %d" % t[s]
+		var card := card_scene.instantiate() as AutoBuyCard
+		grid.add_child(card)
+		card.setup(species)
+		card.target_changed.connect(func(_s: int, _t: int):
+			Global.save_dirty = true
 		)
-		inc_btn.pressed.connect(func():
-			var t: Dictionary = Global.auto_buy_targets
-			var cur: int = t.get(s, 0)
-			t[s] = cur + 1
-			Global.auto_buy_targets = t
-			count_label.text = "目标: %d" % t[s]
-		)
-		
-		list.add_child(row)
 	
 	# 底部提示
 	var hint := Label.new()
 	hint.text = "提示：设置每种鱼期望的数量，鱼缸中不足时将自动购买"
-	hint.position = Vector2(15, 265)
+	hint.position = Vector2(15, 620)
 	hint.add_theme_font_size_override("font_size", 10)
 	hint.modulate = Color(1, 1, 1, 0.6)
 	hint.size = Vector2(370, 25)
